@@ -7,6 +7,7 @@ const routeNames: Record<string, string> = {
   users: '用户管理',
   roles: '角色权限',
   settings: '系统设置',
+  'audit-logs': '审计日志',
 };
 
 export function Breadcrumb() {

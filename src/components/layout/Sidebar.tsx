@@ -9,7 +9,8 @@ import {
   ChevronRight,
   Zap,
   HelpCircle,
-  LogOut
+  LogOut,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -31,6 +32,7 @@ const menuItems = [
   { icon: LayoutDashboard, label: '仪表盘', path: '/dashboard', permission: 'dashboard:read' },
   { icon: Users, label: '用户管理', path: '/users', permission: 'users:read' },
   { icon: Shield, label: '角色权限', path: '/roles', permission: 'roles:read' },
+  { icon: FileText, label: '审计日志', path: '/audit-logs', permission: 'roles:read' },
   { icon: Settings, label: '系统设置', path: '/settings', permission: 'settings:read' },
 ];
 
@@ -44,7 +46,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { isAdmin, isModerator, signOut } = useAuthContext();
 
   const filteredItems = menuItems.filter(item => {
-    if (item.permission.includes('roles')) {
+    if (item.permission.includes('roles') || item.path === '/audit-logs') {
       return isAdmin;
     }
     if (item.permission.includes('users')) {
@@ -171,7 +173,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="px-3 pb-4 space-y-2">
         <Separator className="mb-4" />
         
-        {bottomItems.map((item, index) => {
+        {bottomItems.map((item) => {
           const Icon = item.icon;
           const content = (
             <button
