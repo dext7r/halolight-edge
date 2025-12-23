@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, Search } from 'lucide-react';
+import { Menu, Search, LogOut, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { useThemeSettings } from '@/contexts/ThemeContext';
+import { ThemeColorPicker } from '@/components/ThemeColorPicker';
 import { Breadcrumb } from './Breadcrumb';
 import { CommandPalette } from '@/components/CommandPalette';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
@@ -18,7 +19,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { LogOut, User, Settings } from 'lucide-react';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -32,8 +32,13 @@ const roleLabels = {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const { profile, role, signOut } = useAuthContext();
+  const { settings } = useThemeSettings();
   const navigate = useNavigate();
   const [commandOpen, setCommandOpen] = useState(false);
+
+  if (!settings.showHeader) {
+    return null;
+  }
 
   // 监听 Cmd+K / Ctrl+K 快捷键
   useEffect(() => {
@@ -68,7 +73,9 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="h-16 border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
+      <header className={`h-16 border-b border-border bg-card/95 backdrop-blur-md z-40 shadow-sm ${
+        settings.headerFixed ? 'sticky top-0' : ''
+      }`}>
         <div className="h-full px-4 lg:px-6 flex items-center justify-between gap-4">
           {/* Left Section */}
           <div className="flex items-center gap-4 flex-1">
@@ -103,8 +110,8 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Right Section */}
           <div className="flex items-center gap-2">
-            {/* Theme Toggle */}
-            <ThemeToggle />
+            {/* Theme Color Picker */}
+            <ThemeColorPicker />
 
             {/* Notifications */}
             <NotificationDropdown />

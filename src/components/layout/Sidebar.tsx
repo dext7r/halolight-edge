@@ -244,24 +244,47 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         )}
 
         {/* Collapse Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
-          className="w-full justify-center text-muted-foreground hover:text-foreground mt-2"
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <>
-              <ChevronLeft className="h-4 w-4 mr-2" />
-              <span>收起菜单</span>
-            </>
-          )}
-        </Button>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle();
+              }}
+              className="w-full justify-center text-muted-foreground hover:text-foreground mt-2"
+            >
+              {collapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <>
+                  <ChevronLeft className="h-4 w-4 mr-2" />
+                  <span>收起菜单</span>
+                </>
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            <div className="flex items-center gap-2">
+              <span>{collapsed ? '展开菜单' : '收起菜单'}</span>
+              <kbd className="h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground inline-flex">
+                ⌘B
+              </kbd>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Collapsed mode indicator */}
+        {collapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex justify-center mt-2"
+          >
+            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+          </motion.div>
+        )}
       </div>
     </motion.aside>
   );

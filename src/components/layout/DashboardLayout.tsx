@@ -2,6 +2,7 @@ import { ReactNode, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { Footer } from './Footer';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -75,6 +76,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {children}
           </motion.div>
         </main>
+
+        <Footer />
       </div>
     </div>
   );
