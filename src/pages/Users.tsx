@@ -176,16 +176,18 @@ export default function Users() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">用户管理</h1>
+            <h1 className="text-3xl font-bold tracking-tight">用户管理</h1>
             <p className="text-muted-foreground mt-1">
-              管理系统用户及其角色权限
+              管理系统用户及其角色权限 · 共 {users.length} 名用户
             </p>
           </div>
           {isAdmin && (
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              添加用户
-            </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button className="gap-2 shadow-sm shadow-primary/20">
+                <Plus className="h-4 w-4" />
+                添加用户
+              </Button>
+            </motion.div>
           )}
         </div>
 
@@ -199,7 +201,7 @@ export default function Users() {
                   placeholder="搜索用户名或邮箱..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -214,12 +216,16 @@ export default function Users() {
                   <SelectItem value="user">用户</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" onClick={fetchUsers}>
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Download className="h-4 w-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="outline" size="icon" onClick={fetchUsers} className="hover:bg-primary/10">
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button variant="outline" size="icon" className="hover:bg-primary/10">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </motion.div>
             </div>
           </CardContent>
         </Card>

@@ -154,15 +154,17 @@ export default function AuditLogs() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">审计日志</h1>
+            <h1 className="text-3xl font-bold tracking-tight">审计日志</h1>
             <p className="text-muted-foreground mt-1">
-              查看系统操作记录和安全事件
+              查看系统操作记录和安全事件 · 共 {filteredLogs.length} 条记录
             </p>
           </div>
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            导出日志
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button variant="outline" className="gap-2 shadow-sm">
+              <Download className="h-4 w-4" />
+              导出日志
+            </Button>
+          </motion.div>
         </div>
 
         {/* Filters */}

@@ -52,7 +52,7 @@ export function Header({ onMenuClick }: HeaderProps) {
     .toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U';
 
   return (
-    <header className="h-16 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-40">
+    <header className="h-16 border-b border-border bg-card/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
       <div className="h-full px-4 lg:px-6 flex items-center justify-between gap-4">
         {/* Left Section */}
         <div className="flex items-center gap-4 flex-1">
@@ -60,7 +60,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             variant="ghost"
             size="icon"
             onClick={onMenuClick}
-            className="lg:hidden"
+            className="lg:hidden hover:bg-muted"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -75,14 +75,14 @@ export function Header({ onMenuClick }: HeaderProps) {
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="hidden lg:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 w-72"
+          className="hidden lg:flex items-center gap-2 bg-muted/50 hover:bg-muted/70 rounded-lg px-3 py-1.5 w-72 transition-colors cursor-pointer border border-transparent hover:border-border/50"
         >
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索功能、设置..."
             className="border-0 bg-transparent h-8 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
           />
-          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground shadow-sm">
             ⌘K
           </kbd>
         </motion.div>

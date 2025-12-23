@@ -180,11 +180,15 @@
 @layer components {
   /* 玻璃态效果 */
   .glass {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50;
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-sm;
   }
 
   .glass-subtle {
     @apply bg-card/40 backdrop-blur-md border border-border/30;
+  }
+
+  .glass-strong {
+    @apply bg-card/95 backdrop-blur-2xl border border-border/60 shadow-md;
   }
 
   /* 发光边框 */
@@ -214,6 +218,11 @@
     background-image: var(--gradient-accent);
   }
 
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
   /* 悬浮卡片 */
   .card-hover {
     @apply transition-all duration-300;
@@ -222,6 +231,19 @@
   .card-hover:hover {
     @apply -translate-y-1;
     box-shadow: var(--shadow-lg), var(--shadow-glow);
+  }
+
+  .card-interactive {
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  .card-interactive:hover {
+    @apply -translate-y-0.5 border-primary/30;
+    box-shadow: var(--shadow-md);
+  }
+
+  .card-interactive:active {
+    @apply translate-y-0;
   }
 
   /* 状态徽章 */
@@ -239,6 +261,10 @@
 
   .badge-info {
     @apply bg-info/10 text-info border border-info/20;
+  }
+
+  .badge-primary {
+    @apply bg-primary/10 text-primary border border-primary/20;
   }
 
   /* 表格行悬浮 */
@@ -283,6 +309,49 @@
     opacity: 0.5;
   }
 
+  /* 状态指示器 */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-online {
+    @apply bg-success animate-pulse;
+  }
+
+  .status-dot-offline {
+    @apply bg-destructive;
+  }
+
+  .status-dot-warning {
+    @apply bg-warning animate-pulse;
+  }
+
+  /* 骨架屏加载效果 */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  /* 数据可视化容器 */
+  .chart-container {
+    @apply p-4 rounded-lg bg-card border border-border/50;
+  }
+
+  /* 空状态 */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
+
+  .empty-state-icon {
+    @apply h-12 w-12 text-muted-foreground/50 mb-4;
+  }
+
   /* 动画类 */
   .animate-in {
     animation: animateIn var(--transition-normal) ease-out;
@@ -306,6 +375,25 @@
 
   .animate-float {
     animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 2s ease-in-out infinite;
+  }
+
+  /* 焦点环效果 */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* 响应式隐藏 */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -380,5 +468,34 @@
   }
   50% {
     transform: translateY(-10px);
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
   }
 }

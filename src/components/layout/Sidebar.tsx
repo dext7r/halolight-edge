@@ -128,7 +128,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       initial={false}
       animate={{ width: collapsed ? 72 : 256 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0"
+      className="bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0 shadow-sm"
     >
       {/* Logo */}
       <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
@@ -139,17 +139,21 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <motion.div 
             whileHover={{ scale: 1.05, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
-            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-lg"
+            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20"
           >
             <Zap className="h-5 w-5 text-primary-foreground" />
           </motion.div>
           <motion.div
             initial={false}
-            animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : 'auto' }}
+            animate={{ 
+              opacity: collapsed ? 0 : 1, 
+              width: collapsed ? 0 : 'auto',
+              marginLeft: collapsed ? 0 : 0,
+            }}
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <span className="font-bold text-lg text-sidebar-foreground whitespace-nowrap">
+            <span className="font-bold text-lg text-sidebar-foreground whitespace-nowrap tracking-tight">
               RBAC Admin
             </span>
             <p className="text-xs text-muted-foreground">企业级权限管理</p>

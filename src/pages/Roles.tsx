@@ -201,21 +201,30 @@ export default function Roles() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">角色权限</h1>
+            <h1 className="text-3xl font-bold tracking-tight">角色权限</h1>
             <p className="text-muted-foreground mt-1">
               配置各角色的系统访问权限
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={fetchData} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              刷新
-            </Button>
-            {pendingChanges.size > 0 && (
-              <Button onClick={saveChanges} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                保存更改 ({pendingChanges.size})
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button variant="outline" onClick={fetchData} disabled={loading} className="shadow-sm">
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                刷新
               </Button>
+            </motion.div>
+            {pendingChanges.size > 0 && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ scale: 1.02 }} 
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button onClick={saveChanges} disabled={saving} className="shadow-sm shadow-primary/20">
+                  <Save className="h-4 w-4 mr-2" />
+                  保存更改 ({pendingChanges.size})
+                </Button>
+              </motion.div>
             )}
           </div>
         </div>
