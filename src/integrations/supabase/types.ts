@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at: string
+          details: Json | null
+          id: string
+          ip_address: string | null
+          target_user_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          created_at?: string
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          target_user_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string
@@ -120,7 +153,29 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      daily_activity: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"] | null
+          count: number | null
+          day: string | null
+        }
+        Relationships: []
+      }
+      role_statistics: {
+        Row: {
+          role: Database["public"]["Enums"]["app_role"] | null
+          user_count: number | null
+        }
+        Relationships: []
+      }
+      user_statistics: {
+        Row: {
+          month: string | null
+          new_users: number | null
+          total_users: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_role: {
@@ -134,9 +189,26 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_audit_event: {
+        Args: {
+          p_action: Database["public"]["Enums"]["audit_action"]
+          p_details?: Json
+          p_target_user_id?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      audit_action:
+        | "user_login"
+        | "user_logout"
+        | "user_signup"
+        | "role_change"
+        | "permission_change"
+        | "profile_update"
+        | "password_reset"
+        | "user_delete"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -265,6 +337,16 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      audit_action: [
+        "user_login",
+        "user_logout",
+        "user_signup",
+        "role_change",
+        "permission_change",
+        "profile_update",
+        "password_reset",
+        "user_delete",
+      ],
     },
   },
 } as const
