@@ -12,7 +12,30 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading } = useAuthContext();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Persist sidebar collapsed state across route changes.
+  const SIDEBAR_COLLAPSED_KEY = "rbac_admin.sidebar_collapsed";
+  const getInitialCollapsed = () => {
+    try {
+      return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  };
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(getInitialCollapsed);
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -36,15 +59,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen bg-background flex w-full">
       <AnimatePresence mode="wait">
-        <Sidebar 
-          collapsed={sidebarCollapsed} 
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} 
-        />
+        <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebarCollapsed} />
       </AnimatePresence>
-      
+
       <div className="flex-1 flex flex-col min-w-0">
-        <Header onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)} />
-        
+        <Header onMenuClick={toggleSidebarCollapsed} />
+
         <main className="flex-1 overflow-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
