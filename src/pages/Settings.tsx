@@ -7,8 +7,12 @@ import {
   Palette,
   Save,
   Camera,
-  Loader2
+  Loader2,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -29,8 +34,15 @@ const roleLabels = {
   user: '用户',
 };
 
+const themeOptions = [
+  { value: 'light', label: '亮色模式', icon: Sun, description: '适合日间使用' },
+  { value: 'dark', label: '暗色模式', icon: Moon, description: '保护眼睛，适合夜间' },
+  { value: 'system', label: '跟随系统', icon: Monitor, description: '自动匹配系统设置' },
+];
+
 export default function Settings() {
   const { profile, role, user } = useAuthContext();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
@@ -94,24 +106,28 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="bg-muted/50">
+          <TabsList className="bg-muted/50 p-1">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
-              个人资料
+              <span className="hidden sm:inline">个人资料</span>
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">外观主题</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-2">
               <Shield className="h-4 w-4" />
-              安全设置
+              <span className="hidden sm:inline">安全设置</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
-              通知设置
+              <span className="hidden sm:inline">通知设置</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
           <TabsContent value="profile">
-            <Card className="glass border-border/50">
+            <Card className="border-border/50">
               <CardHeader>
                 <CardTitle>个人资料</CardTitle>
                 <CardDescription>更新您的个人信息</CardDescription>
@@ -181,9 +197,110 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
+          {/* Appearance Tab */}
+          <TabsContent value="appearance">
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle>外观主题</CardTitle>
+                <CardDescription>自定义您的界面主题偏好</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <RadioGroup
+                  value={theme}
+                  onValueChange={setTheme}
+                  className="grid gap-4 md:grid-cols-3"
+                >
+                  {themeOptions.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <motion.label
+                        key={option.value}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`
+                          relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 cursor-pointer transition-all
+                          ${theme === option.value 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          }
+                        `}
+                      >
+                        <RadioGroupItem 
+                          value={option.value} 
+                          id={option.value}
+                          className="sr-only"
+                        />
+                        <div className={`
+                          p-3 rounded-xl
+                          ${theme === option.value ? 'bg-primary/10' : 'bg-muted'}
+                        `}>
+                          <Icon className={`h-6 w-6 ${theme === option.value ? 'text-primary' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium">{option.label}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
+                        </div>
+                        {theme === option.value && (
+                          <motion.div
+                            layoutId="themeIndicator"
+                            className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full"
+                          />
+                        )}
+                      </motion.label>
+                    );
+                  })}
+                </RadioGroup>
+
+                <Separator />
+
+                <div className="space-y-4">
+                  <h4 className="font-medium">主题预览</h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="p-4 rounded-lg bg-card border">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Palette className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">主色调</p>
+                          <p className="text-sm text-muted-foreground">Primary Color</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="h-8 flex-1 rounded bg-primary" />
+                        <div className="h-8 flex-1 rounded bg-primary/80" />
+                        <div className="h-8 flex-1 rounded bg-primary/60" />
+                        <div className="h-8 flex-1 rounded bg-primary/40" />
+                        <div className="h-8 flex-1 rounded bg-primary/20" />
+                      </div>
+                    </div>
+                    <div className="p-4 rounded-lg bg-card border">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                          <div className="w-5 h-5 rounded bg-muted-foreground/30" />
+                        </div>
+                        <div>
+                          <p className="font-medium">中性色</p>
+                          <p className="text-sm text-muted-foreground">Neutral Colors</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="h-8 flex-1 rounded bg-foreground" />
+                        <div className="h-8 flex-1 rounded bg-muted-foreground" />
+                        <div className="h-8 flex-1 rounded bg-muted" />
+                        <div className="h-8 flex-1 rounded bg-border" />
+                        <div className="h-8 flex-1 rounded bg-background border" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Security Tab */}
           <TabsContent value="security">
-            <Card className="glass border-border/50">
+            <Card className="border-border/50">
               <CardHeader>
                 <CardTitle>安全设置</CardTitle>
                 <CardDescription>管理您的账号安全选项</CardDescription>
@@ -228,7 +345,7 @@ export default function Settings() {
 
           {/* Notifications Tab */}
           <TabsContent value="notifications">
-            <Card className="glass border-border/50">
+            <Card className="border-border/50">
               <CardHeader>
                 <CardTitle>通知设置</CardTitle>
                 <CardDescription>配置您希望接收的通知类型</CardDescription>

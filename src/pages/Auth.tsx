@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { Zap, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import { Zap, Mail, Lock, User, ArrowRight, Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
+type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent';
 
 const loginSchema = z.object({
   email: z.string().email('请输入有效的邮箱地址'),
@@ -22,8 +25,12 @@ const signupSchema = loginSchema.extend({
   path: ['confirmPassword'],
 });
 
+const forgotSchema = z.object({
+  email: z.string().email('请输入有效的邮箱地址'),
+});
+
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>('login');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -53,7 +60,7 @@ export default function Auth() {
     setErrors({});
 
     try {
-      if (isLogin) {
+      if (mode === 'login') {
         const validated = loginSchema.parse(formData);
         setLoading(true);
         const { error } = await signIn(validated.email, validated.password);
@@ -78,7 +85,7 @@ export default function Auth() {
             description: '欢迎回来！',
           });
         }
-      } else {
+      } else if (mode === 'signup') {
         const validated = signupSchema.parse(formData);
         setLoading(true);
         const { error } = await signUp(validated.email, validated.password, validated.fullName);
@@ -103,6 +110,23 @@ export default function Auth() {
             description: '账号创建成功，正在登录...',
           });
         }
+      } else if (mode === 'forgot') {
+        const validated = forgotSchema.parse(formData);
+        setLoading(true);
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(validated.email, {
+          redirectTo: `${window.location.origin}/auth?mode=reset`,
+        });
+
+        if (error) {
+          toast({
+            title: '发送失败',
+            description: error.message,
+            variant: 'destructive',
+          });
+        } else {
+          setMode('reset-sent');
+        }
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -118,6 +142,34 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  const switchMode = (newMode: AuthMode) => {
+    setMode(newMode);
+    setErrors({});
+    if (newMode === 'login' || newMode === 'signup') {
+      setFormData({
+        email: '',
+        password: '',
+        fullName: '',
+        confirmPassword: '',
+      });
+    }
+  };
+
+  const renderTitle = () => {
+    switch (mode) {
+      case 'login':
+        return { title: '欢迎回来', subtitle: '请输入您的账号信息登录系统' };
+      case 'signup':
+        return { title: '创建账号', subtitle: '填写以下信息创建您的账号' };
+      case 'forgot':
+        return { title: '找回密码', subtitle: '输入您的邮箱，我们将发送重置链接' };
+      case 'reset-sent':
+        return { title: '邮件已发送', subtitle: '请检查您的邮箱并点击重置链接' };
+    }
+  };
+
+  const { title, subtitle } = renderTitle();
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -213,138 +265,175 @@ export default function Auth() {
 
           <AnimatePresence mode="wait">
             <motion.div
-              key={isLogin ? 'login' : 'signup'}
+              key={mode}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h2 className="text-2xl font-bold mb-2">
-                {isLogin ? '欢迎回来' : '创建账号'}
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                {isLogin 
-                  ? '请输入您的账号信息登录系统' 
-                  : '填写以下信息创建您的账号'}
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">姓名</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        placeholder="请输入您的姓名"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        className="pl-10 input-glow"
-                      />
-                    </div>
-                    {errors.fullName && (
-                      <p className="text-sm text-destructive">{errors.fullName}</p>
-                    )}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">邮箱</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      placeholder="请输入邮箱地址"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="pl-10 input-glow"
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-sm text-destructive">{errors.email}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">密码</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="请输入密码"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="pl-10 input-glow"
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
-                  )}
-                </div>
-
-                {!isLogin && (
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">确认密码</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        placeholder="请再次输入密码"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        className="pl-10 input-glow"
-                      />
-                    </div>
-                    {errors.confirmPassword && (
-                      <p className="text-sm text-destructive">{errors.confirmPassword}</p>
-                    )}
-                  </div>
-                )}
-
-                <Button 
-                  type="submit" 
-                  className="w-full h-11 text-base font-medium group"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      {isLogin ? '登录' : '注册'}
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </>
-                  )}
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center">
+              {/* Back Button for forgot/reset-sent */}
+              {(mode === 'forgot' || mode === 'reset-sent') && (
                 <button
-                  type="button"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setErrors({});
-                    setFormData({
-                      email: '',
-                      password: '',
-                      fullName: '',
-                      confirmPassword: '',
-                    });
-                  }}
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => switchMode('login')}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
                 >
-                  {isLogin ? '没有账号？' : '已有账号？'}
-                  <span className="font-medium text-primary ml-1">
-                    {isLogin ? '立即注册' : '立即登录'}
-                  </span>
+                  <ArrowLeft className="h-4 w-4" />
+                  返回登录
                 </button>
-              </div>
+              )}
+
+              <h2 className="text-2xl font-bold mb-2">{title}</h2>
+              <p className="text-muted-foreground mb-8">{subtitle}</p>
+
+              {mode === 'reset-sent' ? (
+                <div className="text-center py-8">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 200 }}
+                    className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6"
+                  >
+                    <CheckCircle className="h-8 w-8 text-success" />
+                  </motion.div>
+                  <p className="text-muted-foreground mb-6">
+                    我们已向 <span className="text-foreground font-medium">{formData.email}</span> 发送了密码重置链接。
+                    请检查您的收件箱（包括垃圾邮件文件夹）。
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => switchMode('login')}
+                    className="w-full"
+                  >
+                    返回登录
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {mode === 'signup' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">姓名</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="fullName"
+                          name="fullName"
+                          placeholder="请输入您的姓名"
+                          value={formData.fullName}
+                          onChange={handleChange}
+                          className="pl-10 input-glow"
+                        />
+                      </div>
+                      {errors.fullName && (
+                        <p className="text-sm text-destructive">{errors.fullName}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">邮箱</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="请输入邮箱地址"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="pl-10 input-glow"
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-sm text-destructive">{errors.email}</p>
+                    )}
+                  </div>
+
+                  {mode !== 'forgot' && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">密码</Label>
+                        {mode === 'login' && (
+                          <button
+                            type="button"
+                            onClick={() => switchMode('forgot')}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            忘记密码？
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          placeholder="请输入密码"
+                          value={formData.password}
+                          onChange={handleChange}
+                          className="pl-10 input-glow"
+                        />
+                      </div>
+                      {errors.password && (
+                        <p className="text-sm text-destructive">{errors.password}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {mode === 'signup' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">确认密码</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="confirmPassword"
+                          name="confirmPassword"
+                          type="password"
+                          placeholder="请再次输入密码"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          className="pl-10 input-glow"
+                        />
+                      </div>
+                      {errors.confirmPassword && (
+                        <p className="text-sm text-destructive">{errors.confirmPassword}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <Button 
+                    type="submit" 
+                    className="w-full h-11 text-base font-medium group"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        {mode === 'login' && '登录'}
+                        {mode === 'signup' && '注册'}
+                        {mode === 'forgot' && '发送重置链接'}
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
+
+              {(mode === 'login' || mode === 'signup') && (
+                <div className="mt-6 text-center">
+                  <button
+                    type="button"
+                    onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    {mode === 'login' ? '没有账号？' : '已有账号？'}
+                    <span className="font-medium text-primary ml-1">
+                      {mode === 'login' ? '立即注册' : '立即登录'}
+                    </span>
+                  </button>
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Menu, Bell, Search, LogOut, User } from 'lucide-react';
+import { Menu, Bell, Search, LogOut, User, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Breadcrumb } from './Breadcrumb';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -50,10 +52,10 @@ export function Header({ onMenuClick }: HeaderProps) {
     .toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U';
 
   return (
-    <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-      <div className="h-full px-4 flex items-center justify-between gap-4">
+    <header className="h-16 border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-40">
+      <div className="h-full px-4 lg:px-6 flex items-center justify-between gap-4">
         {/* Left Section */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
           <Button
             variant="ghost"
             size="icon"
@@ -63,22 +65,33 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </Button>
 
-          {/* Search */}
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="hidden md:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 w-64"
-          >
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="搜索..."
-              className="border-0 bg-transparent h-8 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-            />
-          </motion.div>
+          {/* Breadcrumb - 隐藏在移动端 */}
+          <div className="hidden md:block">
+            <Breadcrumb />
+          </div>
         </div>
 
+        {/* Center - Search */}
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="hidden lg:flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-1.5 w-72"
+        >
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="搜索功能、设置..."
+            className="border-0 bg-transparent h-8 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+          />
+          <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            ⌘K
+          </kbd>
+        </motion.div>
+
         {/* Right Section */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Notifications */}
           <motion.div
             whileHover={{ scale: 1.05 }}
@@ -86,7 +99,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           >
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
             </Button>
           </motion.div>
 
@@ -105,16 +118,13 @@ export function Header({ onMenuClick }: HeaderProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:flex flex-col items-start">
-                  <span className="text-sm font-medium">
-                    {profile?.full_name || profile?.email}
+                  <span className="text-sm font-medium leading-none">
+                    {profile?.full_name || profile?.email?.split('@')[0]}
                   </span>
                   {role && (
-                    <Badge 
-                      variant={roleLabels[role]?.variant} 
-                      className="h-4 text-[10px] px-1.5"
-                    >
+                    <span className="text-xs text-muted-foreground mt-0.5">
                       {roleLabels[role]?.label}
-                    </Badge>
+                    </span>
                   )}
                 </div>
               </motion.button>
@@ -129,7 +139,11 @@ export function Header({ onMenuClick }: HeaderProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => navigate('/settings')}>
                 <User className="mr-2 h-4 w-4" />
-                个人设置
+                个人资料
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                系统设置
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem 

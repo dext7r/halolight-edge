@@ -2,12 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 企业级 RBAC 后台管理系统设计系统 - 深邃专业暗色主题 */
+/* 企业级 RBAC 后台管理系统设计系统 - 支持亮色/暗色主题 */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @layer base {
   :root {
+    /* 亮色主题 - 参考 Arco Design Pro */
+    --background: 220 14% 96%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 213 94% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 213 94% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 213 94% 50%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 213 94% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 213 94% 50%;
+
+    /* 渐变 */
+    --gradient-primary: linear-gradient(135deg, hsl(213 94% 50%), hsl(213 94% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(213 94% 50%), hsl(262 83% 58%));
+    --gradient-surface: linear-gradient(180deg, hsl(220 14% 98%), hsl(220 14% 96%));
+    --gradient-glow: radial-gradient(ellipse at center, hsl(213 94% 50% / 0.1), transparent 70%);
+
+    /* 阴影 */
+    --shadow-sm: 0 1px 2px hsl(220 13% 87% / 0.5);
+    --shadow-md: 0 4px 6px -1px hsl(220 13% 87% / 0.4), 0 2px 4px -2px hsl(220 13% 87% / 0.4);
+    --shadow-lg: 0 10px 15px -3px hsl(220 13% 87% / 0.3), 0 4px 6px -4px hsl(220 13% 87% / 0.3);
+    --shadow-glow: 0 0 20px hsl(213 94% 50% / 0.15);
+
+    /* 动画时长 */
+    --transition-fast: 150ms;
+    --transition-normal: 250ms;
+    --transition-slow: 400ms;
+  }
+
+  .dark {
+    /* 暗色主题 - 深邃专业风格 */
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
@@ -17,7 +86,7 @@
     --popover: 222 47% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 199 89% 48%;
+    --primary: 213 94% 55%;
     --primary-foreground: 222 47% 6%;
 
     --secondary: 222 30% 14%;
@@ -26,7 +95,7 @@
     --muted: 222 30% 12%;
     --muted-foreground: 215 20% 55%;
 
-    --accent: 199 89% 48%;
+    --accent: 213 94% 55%;
     --accent-foreground: 222 47% 6%;
 
     --destructive: 0 84% 60%;
@@ -38,42 +107,33 @@
     --warning: 38 92% 50%;
     --warning-foreground: 222 47% 6%;
 
+    --info: 199 89% 48%;
+    --info-foreground: 210 40% 98%;
+
     --border: 222 30% 18%;
     --input: 222 30% 14%;
-    --ring: 199 89% 48%;
-
-    --radius: 0.75rem;
+    --ring: 213 94% 55%;
 
     --sidebar-background: 222 47% 7%;
     --sidebar-foreground: 210 40% 85%;
-    --sidebar-primary: 199 89% 48%;
+    --sidebar-primary: 213 94% 55%;
     --sidebar-primary-foreground: 222 47% 6%;
     --sidebar-accent: 222 30% 12%;
     --sidebar-accent-foreground: 210 40% 90%;
     --sidebar-border: 222 30% 15%;
-    --sidebar-ring: 199 89% 48%;
+    --sidebar-ring: 213 94% 55%;
 
-    /* 自定义渐变 */
-    --gradient-primary: linear-gradient(135deg, hsl(199 89% 48%), hsl(199 89% 38%));
-    --gradient-accent: linear-gradient(135deg, hsl(199 89% 48%), hsl(262 83% 58%));
+    /* 暗色主题渐变 */
+    --gradient-primary: linear-gradient(135deg, hsl(213 94% 55%), hsl(213 94% 45%));
+    --gradient-accent: linear-gradient(135deg, hsl(213 94% 55%), hsl(262 83% 58%));
     --gradient-surface: linear-gradient(180deg, hsl(222 47% 8%), hsl(222 47% 6%));
-    --gradient-glow: radial-gradient(ellipse at center, hsl(199 89% 48% / 0.15), transparent 70%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(213 94% 55% / 0.15), transparent 70%);
 
-    /* 阴影 */
+    /* 暗色主题阴影 */
     --shadow-sm: 0 1px 2px hsl(222 47% 4% / 0.5);
     --shadow-md: 0 4px 6px -1px hsl(222 47% 4% / 0.5), 0 2px 4px -2px hsl(222 47% 4% / 0.5);
     --shadow-lg: 0 10px 15px -3px hsl(222 47% 4% / 0.5), 0 4px 6px -4px hsl(222 47% 4% / 0.5);
-    --shadow-glow: 0 0 20px hsl(199 89% 48% / 0.3);
-
-    /* 动画时长 */
-    --transition-fast: 150ms;
-    --transition-normal: 250ms;
-    --transition-slow: 400ms;
-  }
-
-  .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --shadow-glow: 0 0 20px hsl(213 94% 55% / 0.3);
   }
 }
 
@@ -97,18 +157,18 @@
 
   /* 自定义滚动条 */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
     background: hsl(var(--muted));
-    border-radius: 4px;
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--border));
-    border-radius: 4px;
+    border-radius: 3px;
     transition: background var(--transition-normal);
   }
 
@@ -177,6 +237,10 @@
     @apply bg-destructive/10 text-destructive border border-destructive/20;
   }
 
+  .badge-info {
+    @apply bg-info/10 text-info border border-info/20;
+  }
+
   /* 表格行悬浮 */
   .table-row-hover {
     @apply transition-colors duration-200 hover:bg-muted/50;
@@ -189,7 +253,34 @@
 
   /* 侧边栏项目激活状态 */
   .sidebar-item-active {
-    @apply bg-primary/10 text-primary border-l-2 border-primary;
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* 面包屑样式 */
+  .breadcrumb-item {
+    @apply text-muted-foreground hover:text-foreground transition-colors;
+  }
+
+  .breadcrumb-separator {
+    @apply text-muted-foreground/50 mx-2;
+  }
+
+  /* 统计卡片 */
+  .stat-card {
+    @apply relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 120px;
+    height: 120px;
+    background: var(--gradient-glow);
+    border-radius: 50%;
+    transform: translate(30%, -30%);
+    opacity: 0.5;
   }
 
   /* 动画类 */
@@ -212,6 +303,10 @@
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
 }
 
 @layer utilities {
@@ -226,6 +321,12 @@
   /* 径向渐变遮罩 */
   .bg-radial-mask {
     background: radial-gradient(ellipse 80% 50% at 50% -20%, hsl(var(--primary) / 0.15), transparent);
+  }
+
+  /* 点状背景 */
+  .bg-dots {
+    background-image: radial-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 16px 16px;
   }
 }
 
@@ -270,5 +371,14 @@
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
   }
 }

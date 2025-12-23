@@ -7,9 +7,13 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   BarChart3,
-  Clock
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
@@ -26,7 +30,7 @@ const stats = [
   {
     title: '活跃角色',
     value: '3',
-    change: '0%',
+    change: '稳定',
     trend: 'neutral',
     icon: Shield,
     color: 'text-success',
@@ -35,7 +39,7 @@ const stats = [
   {
     title: '权限配置',
     value: '9',
-    change: '+2',
+    change: '+2 本周',
     trend: 'up',
     icon: Activity,
     color: 'text-warning',
@@ -47,17 +51,24 @@ const stats = [
     change: '+23.1%',
     trend: 'up',
     icon: TrendingUp,
-    color: 'text-primary',
-    bgColor: 'bg-primary/10',
+    color: 'text-info',
+    bgColor: 'bg-info/10',
   },
 ];
 
 const recentActivities = [
-  { user: '张三', action: '登录系统', time: '2分钟前', type: 'login' },
-  { user: '管理员', action: '修改用户角色', time: '15分钟前', type: 'role' },
-  { user: '李四', action: '更新个人信息', time: '1小时前', type: 'update' },
-  { user: '管理员', action: '创建新权限', time: '2小时前', type: 'permission' },
-  { user: '王五', action: '首次登录', time: '3小时前', type: 'login' },
+  { user: '张三', action: '登录系统', time: '2分钟前', type: 'success' },
+  { user: '管理员', action: '修改用户角色', time: '15分钟前', type: 'warning' },
+  { user: '李四', action: '更新个人信息', time: '1小时前', type: 'success' },
+  { user: '管理员', action: '创建新权限', time: '2小时前', type: 'success' },
+  { user: '系统', action: '安全扫描完成', time: '3小时前', type: 'success' },
+];
+
+const systemStatus = [
+  { name: 'API 服务', status: 'online', latency: '23ms' },
+  { name: '数据库', status: 'online', latency: '12ms' },
+  { name: '缓存服务', status: 'online', latency: '3ms' },
+  { name: '邮件服务', status: 'warning', latency: '156ms' },
 ];
 
 const containerVariants = {
@@ -77,13 +88,38 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.4,
-      ease: [0.4, 0, 0.2, 1] as const,
     },
   },
 };
 
 export default function Dashboard() {
   const { profile, role } = useAuthContext();
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'online':
+        return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'warning':
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case 'offline':
+        return <XCircle className="h-4 w-4 text-destructive" />;
+      default:
+        return null;
+    }
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return <div className="w-2 h-2 rounded-full bg-success" />;
+      case 'warning':
+        return <div className="w-2 h-2 rounded-full bg-warning" />;
+      case 'error':
+        return <div className="w-2 h-2 rounded-full bg-destructive" />;
+      default:
+        return <div className="w-2 h-2 rounded-full bg-muted-foreground" />;
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -94,23 +130,29 @@ export default function Dashboard() {
         className="space-y-8"
       >
         {/* Welcome Section */}
-        <motion.div variants={itemVariants}>
-          <h1 className="text-3xl font-bold mb-2">
-            欢迎回来，{profile?.full_name || '用户'}
-          </h1>
-          <p className="text-muted-foreground">
-            这是您的管理控制台概览，以下是系统最新状态。
-          </p>
+        <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold">
+              欢迎回来，{profile?.full_name || '用户'}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              这是您的管理控制台概览，以下是系统最新状态。
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            最后更新：刚刚
+          </div>
         </motion.div>
 
         {/* Stats Grid */}
         <motion.div 
           variants={containerVariants}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
         >
-          {stats.map((stat, index) => (
+          {stats.map((stat) => (
             <motion.div key={stat.title} variants={itemVariants}>
-              <Card className="glass card-hover border-border/50">
+              <Card className="stat-card card-hover border-border/50 overflow-hidden">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className={`p-3 rounded-xl ${stat.bgColor}`}>
@@ -130,7 +172,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <p className="text-2xl font-bold">{stat.value}</p>
+                    <p className="text-3xl font-bold">{stat.value}</p>
                     <p className="text-sm text-muted-foreground mt-1">{stat.title}</p>
                   </div>
                 </CardContent>
@@ -143,7 +185,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Activity Chart Placeholder */}
           <motion.div variants={itemVariants} className="lg:col-span-2">
-            <Card className="glass border-border/50 h-full">
+            <Card className="border-border/50 h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-primary" />
@@ -155,43 +197,39 @@ export default function Dashboard() {
                   <div className="text-center">
                     <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                     <p className="text-muted-foreground">图表数据加载中...</p>
+                    <p className="text-sm text-muted-foreground/70 mt-1">集成 Recharts 后显示</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Recent Activities */}
+          {/* System Status */}
           <motion.div variants={itemVariants}>
-            <Card className="glass border-border/50 h-full">
+            <Card className="border-border/50 h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  最近活动
+                  <Activity className="h-5 w-5 text-primary" />
+                  系统状态
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentActivities.map((activity, index) => (
+                  {systemStatus.map((service, index) => (
                     <motion.div
-                      key={index}
+                      key={service.name}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/30"
                     >
-                      <div className="w-2 h-2 mt-2 rounded-full bg-primary flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {activity.user}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {activity.action}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(service.status)}
+                        <span className="font-medium">{service.name}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {activity.time}
-                      </span>
+                      <Badge variant="secondary" className="text-xs">
+                        {service.latency}
+                      </Badge>
                     </motion.div>
                   ))}
                 </div>
@@ -200,10 +238,42 @@ export default function Dashboard() {
           </motion.div>
         </div>
 
+        {/* Recent Activities */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" />
+                最近活动
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {recentActivities.map((activity, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="flex items-start gap-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="mt-1.5">{getActivityIcon(activity.type)}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{activity.user}</p>
+                      <p className="text-sm text-muted-foreground truncate">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">{activity.time}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Quick Actions for Admin */}
         {role === 'admin' && (
           <motion.div variants={itemVariants}>
-            <Card className="glass border-border/50">
+            <Card className="border-border/50">
               <CardHeader>
                 <CardTitle>快速操作</CardTitle>
               </CardHeader>
@@ -212,23 +282,30 @@ export default function Dashboard() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
                   >
                     添加用户
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
                   >
                     管理角色
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="px-4 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
+                    className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
                   >
                     系统日志
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
+                  >
+                    安全扫描
                   </motion.button>
                 </div>
               </CardContent>
