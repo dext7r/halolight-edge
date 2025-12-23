@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   User, 
@@ -10,7 +10,11 @@ import {
   Loader2,
   Sun,
   Moon,
-  Monitor
+  Monitor,
+  Sparkles,
+  Layout,
+  RotateCcw,
+  Check
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -24,9 +28,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useThemeSettings, themeColors, ColorTheme } from '@/contexts/ThemeContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 const roleLabels = {
   admin: '管理员',
@@ -34,15 +41,22 @@ const roleLabels = {
   user: '用户',
 };
 
-const themeOptions = [
+const modeOptions = [
   { value: 'light', label: '亮色模式', icon: Sun, description: '适合日间使用' },
   { value: 'dark', label: '暗色模式', icon: Moon, description: '保护眼睛，适合夜间' },
   { value: 'system', label: '跟随系统', icon: Monitor, description: '自动匹配系统设置' },
 ];
 
+const animationOptions = [
+  { value: 'subtle', label: '细腻', description: '快速、轻量的动画效果' },
+  { value: 'normal', label: '标准', description: '平衡的动画体验' },
+  { value: 'expressive', label: '丰富', description: '更具表现力的动画' },
+];
+
 export default function Settings() {
   const { profile, role, user } = useAuthContext();
   const { theme, setTheme } = useTheme();
+  const { settings, updateSettings, resetSettings } = useThemeSettings();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: profile?.full_name || '',
@@ -114,6 +128,10 @@ export default function Settings() {
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">外观主题</span>
+            </TabsTrigger>
+            <TabsTrigger value="layout" className="gap-2">
+              <Layout className="h-4 w-4" />
+              <span className="hidden sm:inline">布局设置</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-2">
               <Shield className="h-4 w-4" />
@@ -199,100 +217,246 @@ export default function Settings() {
 
           {/* Appearance Tab */}
           <TabsContent value="appearance">
+            <div className="space-y-6">
+              {/* Theme Mode */}
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle>显示模式</CardTitle>
+                  <CardDescription>选择您喜欢的界面显示模式</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup
+                    value={theme}
+                    onValueChange={setTheme}
+                    className="grid gap-4 md:grid-cols-3"
+                  >
+                    {modeOptions.map((option) => {
+                      const Icon = option.icon;
+                      return (
+                        <motion.label
+                          key={option.value}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={cn(
+                            "relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 cursor-pointer transition-all",
+                            theme === option.value 
+                              ? "border-primary bg-primary/5" 
+                              : "border-border hover:border-primary/50 hover:bg-muted/50"
+                          )}
+                        >
+                          <RadioGroupItem 
+                            value={option.value} 
+                            id={option.value}
+                            className="sr-only"
+                          />
+                          <div className={cn(
+                            "p-3 rounded-xl",
+                            theme === option.value ? "bg-primary/10" : "bg-muted"
+                          )}>
+                            <Icon className={cn("h-6 w-6", theme === option.value ? "text-primary" : "text-muted-foreground")} />
+                          </div>
+                          <div className="text-center">
+                            <p className="font-medium">{option.label}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
+                          </div>
+                          {theme === option.value && (
+                            <motion.div
+                              layoutId="modeIndicator"
+                              className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full"
+                            />
+                          )}
+                        </motion.label>
+                      );
+                    })}
+                  </RadioGroup>
+                </CardContent>
+              </Card>
+
+              {/* Color Theme */}
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle>主题颜色</CardTitle>
+                  <CardDescription>选择您喜欢的主题颜色</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-3">
+                    {(Object.entries(themeColors) as [ColorTheme, typeof themeColors[ColorTheme]][]).map(
+                      ([key, color]) => (
+                        <motion.button
+                          key={key}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => updateSettings({ colorTheme: key })}
+                          className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+                            "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                            settings.colorTheme === key && "ring-2 ring-offset-2"
+                          )}
+                          style={{ backgroundColor: `hsl(${color.primary})` }}
+                          title={color.name}
+                        >
+                          {settings.colorTheme === key && (
+                            <Check className="h-5 w-5 text-white" />
+                          )}
+                        </motion.button>
+                      )
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-4">
+                    当前选择: <span className="font-medium text-foreground">{themeColors[settings.colorTheme].name}</span>
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Animations */}
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    动画效果
+                  </CardTitle>
+                  <CardDescription>自定义界面动画效果</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">启用动画</h4>
+                      <p className="text-sm text-muted-foreground">
+                        开启后界面将显示过渡动画效果
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.animationsEnabled}
+                      onCheckedChange={(checked) => updateSettings({ animationsEnabled: checked })}
+                    />
+                  </div>
+
+                  {settings.animationsEnabled && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <Separator className="my-4" />
+                      <div className="space-y-2">
+                        <Label>动画风格</Label>
+                        <Select
+                          value={settings.animationType}
+                          onValueChange={(value: 'subtle' | 'normal' | 'expressive') => 
+                            updateSettings({ animationType: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {animationOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div>
+                                  <p>{option.label}</p>
+                                  <p className="text-xs text-muted-foreground">{option.description}</p>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </motion.div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Layout Tab */}
+          <TabsContent value="layout">
             <Card className="border-border/50">
               <CardHeader>
-                <CardTitle>外观主题</CardTitle>
-                <CardDescription>自定义您的界面主题偏好</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>布局设置</CardTitle>
+                    <CardDescription>自定义界面布局和组件显示</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={resetSettings}>
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    重置
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <RadioGroup
-                  value={theme}
-                  onValueChange={setTheme}
-                  className="grid gap-4 md:grid-cols-3"
-                >
-                  {themeOptions.map((option) => {
-                    const Icon = option.icon;
-                    return (
-                      <motion.label
-                        key={option.value}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className={`
-                          relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 cursor-pointer transition-all
-                          ${theme === option.value 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                          }
-                        `}
-                      >
-                        <RadioGroupItem 
-                          value={option.value} 
-                          id={option.value}
-                          className="sr-only"
-                        />
-                        <div className={`
-                          p-3 rounded-xl
-                          ${theme === option.value ? 'bg-primary/10' : 'bg-muted'}
-                        `}>
-                          <Icon className={`h-6 w-6 ${theme === option.value ? 'text-primary' : 'text-muted-foreground'}`} />
-                        </div>
-                        <div className="text-center">
-                          <p className="font-medium">{option.label}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
-                        </div>
-                        {theme === option.value && (
-                          <motion.div
-                            layoutId="themeIndicator"
-                            className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full"
-                          />
-                        )}
-                      </motion.label>
-                    );
-                  })}
-                </RadioGroup>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">显示头部导航</h4>
+                    <p className="text-sm text-muted-foreground">
+                      控制顶部导航栏的显示
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.showHeader}
+                    onCheckedChange={(checked) => updateSettings({ showHeader: checked })}
+                  />
+                </div>
 
                 <Separator />
 
-                <div className="space-y-4">
-                  <h4 className="font-medium">主题预览</h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="p-4 rounded-lg bg-card border">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Palette className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">主色调</p>
-                          <p className="text-sm text-muted-foreground">Primary Color</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="h-8 flex-1 rounded bg-primary" />
-                        <div className="h-8 flex-1 rounded bg-primary/80" />
-                        <div className="h-8 flex-1 rounded bg-primary/60" />
-                        <div className="h-8 flex-1 rounded bg-primary/40" />
-                        <div className="h-8 flex-1 rounded bg-primary/20" />
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg bg-card border">
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                          <div className="w-5 h-5 rounded bg-muted-foreground/30" />
-                        </div>
-                        <div>
-                          <p className="font-medium">中性色</p>
-                          <p className="text-sm text-muted-foreground">Neutral Colors</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="h-8 flex-1 rounded bg-foreground" />
-                        <div className="h-8 flex-1 rounded bg-muted-foreground" />
-                        <div className="h-8 flex-1 rounded bg-muted" />
-                        <div className="h-8 flex-1 rounded bg-border" />
-                        <div className="h-8 flex-1 rounded bg-background border" />
-                      </div>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">固定头部导航</h4>
+                    <p className="text-sm text-muted-foreground">
+                      滚动时头部保持在顶部
+                    </p>
                   </div>
+                  <Switch
+                    checked={settings.headerFixed}
+                    onCheckedChange={(checked) => updateSettings({ headerFixed: checked })}
+                    disabled={!settings.showHeader}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">显示底部栏</h4>
+                    <p className="text-sm text-muted-foreground">
+                      控制底部信息栏的显示
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.showFooter}
+                    onCheckedChange={(checked) => updateSettings({ showFooter: checked })}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">固定底部栏</h4>
+                    <p className="text-sm text-muted-foreground">
+                      滚动时底部保持在底部
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.footerFixed}
+                    onCheckedChange={(checked) => updateSettings({ footerFixed: checked })}
+                    disabled={!settings.showFooter}
+                  />
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">显示标签栏</h4>
+                    <p className="text-sm text-muted-foreground">
+                      显示多标签页导航
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings.showTabBar}
+                    onCheckedChange={(checked) => updateSettings({ showTabBar: checked })}
+                  />
                 </div>
               </CardContent>
             </Card>
