@@ -1,11 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Shield, 
   Users, 
-  Check, 
-  X, 
-  Save,
   RefreshCw
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -61,49 +58,36 @@ export default function Roles() {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [roleCounts, setRoleCounts] = useState<Record<AppRole, number>>({
     admin: 0,
     moderator: 0,
     user: 0,
   });
-  const [pendingChanges, setPendingChanges] = useState<Map<string, boolean>>(new Map());
+  const [savingKey, setSavingKey] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch permissions
-      const { data: perms, error: permsError } = await supabase
-        .from('permissions')
-        .select('*')
-        .order('module');
+      const [permsResult, rolePermsResult, userRolesResult] = await Promise.all([
+        supabase.from('permissions').select('*').order('module'),
+        supabase.from('role_permissions').select('*'),
+        supabase.from('user_roles').select('role'),
+      ]);
 
-      if (permsError) throw permsError;
-
-      // Fetch role permissions
-      const { data: rolePerms, error: rolePermsError } = await supabase
-        .from('role_permissions')
-        .select('*');
-
-      if (rolePermsError) throw rolePermsError;
-
-      // Fetch user counts per role
-      const { data: userRoles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role');
-
-      if (rolesError) throw rolesError;
+      if (permsResult.error) throw permsResult.error;
+      if (rolePermsResult.error) throw rolePermsResult.error;
+      if (userRolesResult.error) throw userRolesResult.error;
 
       const counts = { admin: 0, moderator: 0, user: 0 };
-      (userRoles || []).forEach((ur) => {
+      (userRolesResult.data || []).forEach((ur) => {
         const role = ur.role as AppRole;
         if (role in counts) {
           counts[role]++;
         }
       });
 
-      setPermissions(perms as Permission[] || []);
-      setRolePermissions(rolePerms as RolePermission[] || []);
+      setPermissions(permsResult.data as Permission[] || []);
+      setRolePermissions(rolePermsResult.data as RolePermission[] || []);
       setRoleCounts(counts);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -115,70 +99,74 @@ export default function Roles() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const hasPermission = (role: AppRole, permissionId: string): boolean => {
-    const key = `${role}-${permissionId}`;
-    if (pendingChanges.has(key)) {
-      return pendingChanges.get(key)!;
-    }
     return rolePermissions.some(
       (rp) => rp.role === role && rp.permission_id === permissionId
     );
   };
 
-  const togglePermission = (role: AppRole, permissionId: string) => {
+  // Realtime toggle - saves immediately
+  const togglePermission = async (role: AppRole, permissionId: string) => {
     const key = `${role}-${permissionId}`;
-    const currentValue = hasPermission(role, permissionId);
-    setPendingChanges(new Map(pendingChanges.set(key, !currentValue)));
-  };
-
-  const saveChanges = async () => {
-    if (pendingChanges.size === 0) return;
-
-    setSaving(true);
+    const currentHas = hasPermission(role, permissionId);
+    
+    setSavingKey(key);
+    
     try {
-      for (const [key, shouldHave] of pendingChanges) {
-        const [role, permissionId] = key.split('-') as [AppRole, string];
-        const exists = rolePermissions.some(
-          (rp) => rp.role === role && rp.permission_id === permissionId
+      if (currentHas) {
+        // Remove permission
+        const { error } = await supabase
+          .from('role_permissions')
+          .delete()
+          .eq('role', role)
+          .eq('permission_id', permissionId);
+
+        if (error) throw error;
+
+        // Optimistic update
+        setRolePermissions(prev => 
+          prev.filter(rp => !(rp.role === role && rp.permission_id === permissionId))
         );
 
-        if (shouldHave && !exists) {
-          // Add permission
-          await supabase
-            .from('role_permissions')
-            .insert({ role, permission_id: permissionId });
-        } else if (!shouldHave && exists) {
-          // Remove permission
-          await supabase
-            .from('role_permissions')
-            .delete()
-            .eq('role', role)
-            .eq('permission_id', permissionId);
-        }
+        toast({
+          title: '权限已移除',
+          duration: 2000,
+        });
+      } else {
+        // Add permission
+        const { data, error } = await supabase
+          .from('role_permissions')
+          .insert({ role, permission_id: permissionId })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        // Optimistic update
+        setRolePermissions(prev => [...prev, data as RolePermission]);
+
+        toast({
+          title: '权限已添加',
+          duration: 2000,
+        });
       }
-
-      toast({
-        title: '保存成功',
-        description: '权限配置已更新',
-      });
-
-      setPendingChanges(new Map());
-      fetchData();
     } catch (error) {
-      console.error('Error saving changes:', error);
+      console.error('Error toggling permission:', error);
       toast({
-        title: '保存失败',
+        title: '操作失败',
         description: '请稍后重试',
         variant: 'destructive',
       });
+      // Refresh to get correct state
+      fetchData();
     } finally {
-      setSaving(false);
+      setSavingKey(null);
     }
   };
 
@@ -203,30 +191,15 @@ export default function Roles() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">角色权限</h1>
             <p className="text-muted-foreground mt-1">
-              配置各角色的系统访问权限
+              配置各角色的系统访问权限 · 修改实时生效
             </p>
           </div>
-          <div className="flex gap-3">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Button variant="outline" onClick={fetchData} disabled={loading} className="shadow-sm">
-                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                刷新
-              </Button>
-            </motion.div>
-            {pendingChanges.size > 0 && (
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                whileHover={{ scale: 1.02 }} 
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button onClick={saveChanges} disabled={saving} className="shadow-sm shadow-primary/20">
-                  <Save className="h-4 w-4 mr-2" />
-                  保存更改 ({pendingChanges.size})
-                </Button>
-              </motion.div>
-            )}
-          </div>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button variant="outline" onClick={fetchData} disabled={loading} className="shadow-sm">
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              刷新
+            </Button>
+          </motion.div>
         </div>
 
         {/* Role Cards */}
@@ -264,7 +237,7 @@ export default function Roles() {
               权限配置矩阵
             </CardTitle>
             <CardDescription>
-              为每个角色配置具体的操作权限
+              为每个角色配置具体的操作权限，修改后立即生效
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -302,15 +275,22 @@ export default function Roles() {
                               {perm.description}
                             </p>
                           </div>
-                          {roles.map((r) => (
-                            <div key={r.role} className="flex justify-center">
-                              <Switch
-                                checked={hasPermission(r.role, perm.id)}
-                                onCheckedChange={() => togglePermission(r.role, perm.id)}
-                                disabled={r.role === 'admin'} // Admin always has all permissions
-                              />
-                            </div>
-                          ))}
+                          {roles.map((r) => {
+                            const key = `${r.role}-${perm.id}`;
+                            const isChecked = hasPermission(r.role, perm.id);
+                            const isSaving = savingKey === key;
+                            
+                            return (
+                              <div key={r.role} className="flex justify-center">
+                                <Switch
+                                  checked={isChecked}
+                                  onCheckedChange={() => togglePermission(r.role, perm.id)}
+                                  disabled={r.role === 'admin' || isSaving}
+                                  className={isSaving ? 'opacity-50' : ''}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                         {index < perms.length - 1 && <Separator />}
                       </div>

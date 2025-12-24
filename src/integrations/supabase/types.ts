@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          message: string
+          target_role: string | null
+          target_user_id: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          message: string
+          target_role?: string | null
+          target_user_id?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          message?: string
+          target_role?: string | null
+          target_user_id?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       permissions: {
         Row: {
           created_at: string
@@ -78,6 +114,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          status: string
           updated_at: string
           user_id: string
         }
@@ -87,6 +124,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          status?: string
           updated_at?: string
           user_id: string
         }
@@ -96,6 +134,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -126,6 +165,35 @@ export type Database = {
             columns: ["permission_id"]
             isOneToOne: false
             referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notification_reads: {
+        Row: {
+          id: string
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
             referencedColumns: ["id"]
           },
         ]
