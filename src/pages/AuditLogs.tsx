@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FileText, 
@@ -19,16 +19,9 @@ import {
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ClearableInput } from '@/components/ui/clearable-input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import {
   Select,
   SelectContent,
@@ -60,13 +53,13 @@ export default function AuditLogs() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionFilter, setActionFilter] = useState<string>('all');
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
 
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const auditLogs = await fetchAuditLogs(100);
+      const auditLogs = await fetchAuditLogs(500);
       
-      // 获取用户名称
       const userIds = [...new Set([
         ...auditLogs.map(l => l.user_id).filter(Boolean),
         ...auditLogs.map(l => l.target_user_id).filter(Boolean),
@@ -88,6 +81,7 @@ export default function AuditLogs() {
       }));
 
       setLogs(logsWithUsers);
+      setPagination(prev => ({ ...prev, total: logsWithUsers.length }));
     } catch (error) {
       console.error('Error fetching logs:', error);
     } finally {
@@ -99,14 +93,22 @@ export default function AuditLogs() {
     fetchLogs();
   }, []);
 
-  const filteredLogs = logs.filter((log) => {
-    const matchesSearch = 
-      log.user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.target_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      actionConfig[log.action]?.label.includes(searchQuery);
-    const matchesAction = actionFilter === 'all' || log.action === actionFilter;
-    return matchesSearch && matchesAction;
-  });
+  const filteredLogs = useMemo(() => {
+    return logs.filter((log) => {
+      const matchesSearch = 
+        log.user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.target_user_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        actionConfig[log.action]?.label.includes(searchQuery);
+      const matchesAction = actionFilter === 'all' || log.action === actionFilter;
+      return matchesSearch && matchesAction;
+    });
+  }, [logs, searchQuery, actionFilter]);
+
+  const paginatedData = useMemo(() => {
+    const start = (pagination.current - 1) * pagination.pageSize;
+    const end = start + pagination.pageSize;
+    return filteredLogs.slice(start, end);
+  }, [filteredLogs, pagination.current, pagination.pageSize]);
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -127,22 +129,72 @@ export default function AuditLogs() {
     if (log.action === 'role_change' && log.details) {
       const { old_role, new_role } = log.details;
       if (old_role && new_role) {
-        return (
-          <span className="text-xs">
-            {old_role} → {new_role}
-          </span>
-        );
+        return `${old_role} → ${new_role}`;
       }
       if (new_role) {
-        return (
-          <span className="text-xs">
-            分配角色: {new_role}
-          </span>
-        );
+        return `分配角色: ${new_role}`;
       }
     }
-    return null;
+    return '-';
   };
+
+  const columns: Column<AuditLogWithUser>[] = [
+    {
+      key: 'created_at',
+      title: '时间',
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          {formatTime(value)}
+        </div>
+      ),
+    },
+    {
+      key: 'action',
+      title: '操作类型',
+      sortable: true,
+      render: (value) => {
+        const config = actionConfig[value as AuditAction];
+        const Icon = config?.icon || FileText;
+        return (
+          <Badge className={`gap-1.5 ${config?.color || ''}`}>
+            <Icon className="h-3 w-3" />
+            {config?.label || value}
+          </Badge>
+        );
+      },
+    },
+    {
+      key: 'user_name',
+      title: '操作用户',
+      sortable: true,
+      render: (value) => (
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="h-3 w-3 text-primary" />
+          </div>
+          <span className="text-sm font-medium">{value}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'target_user_name',
+      title: '目标用户',
+      className: 'hidden md:table-cell',
+      render: (value) => (
+        <span className="text-sm">{value || '-'}</span>
+      ),
+    },
+    {
+      key: 'details',
+      title: '详情',
+      className: 'hidden lg:table-cell',
+      render: (_, log) => (
+        <span className="text-sm text-muted-foreground">{renderDetails(log)}</span>
+      ),
+    },
+  ];
 
   return (
     <DashboardLayout>
@@ -173,10 +225,11 @@ export default function AuditLogs() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
+                <ClearableInput
                   placeholder="搜索用户或操作..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onClear={() => setSearchQuery('')}
                   className="pl-10"
                 />
               </div>
@@ -213,78 +266,19 @@ export default function AuditLogs() {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/50">
-                  <TableHead>时间</TableHead>
-                  <TableHead>操作类型</TableHead>
-                  <TableHead>操作用户</TableHead>
-                  <TableHead className="hidden md:table-cell">目标用户</TableHead>
-                  <TableHead className="hidden lg:table-cell">详情</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
-                      <RefreshCw className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                    </TableCell>
-                  </TableRow>
-                ) : filteredLogs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                      暂无日志记录
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredLogs.map((log, index) => {
-                    const config = actionConfig[log.action];
-                    const Icon = config?.icon || FileText;
-                    
-                    return (
-                      <motion.tr
-                        key={log.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.02 }}
-                        className="table-row-hover border-border/50"
-                      >
-                        <TableCell className="text-sm">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            {formatTime(log.created_at)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`gap-1.5 ${config?.color || ''}`}>
-                            <Icon className="h-3 w-3" />
-                            {config?.label || log.action}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-3 w-3 text-primary" />
-                            </div>
-                            <span className="text-sm font-medium">{log.user_name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {log.target_user_name ? (
-                            <span className="text-sm">{log.target_user_name}</span>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="hidden lg:table-cell text-muted-foreground">
-                          {renderDetails(log)}
-                        </TableCell>
-                      </motion.tr>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+            <DataTable
+              columns={columns}
+              data={paginatedData}
+              rowKey="id"
+              loading={loading}
+              emptyText="暂无日志记录"
+              pagination={{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: filteredLogs.length,
+                onChange: (page, pageSize) => setPagination({ ...pagination, current: page, pageSize }),
+              }}
+            />
           </CardContent>
         </Card>
       </motion.div>
