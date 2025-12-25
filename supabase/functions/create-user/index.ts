@@ -28,6 +28,10 @@ const swaggerHtml = `<!DOCTYPE html>
     .header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
     .header h1 { margin: 0; font-size: 1.25rem; font-weight: 600; font-family: system-ui; }
     .header-right { display: flex; align-items: center; gap: 12px; }
+    .nav-links { display: flex; gap: 8px; }
+    .nav-link { display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 6px; text-decoration: none; font-size: 12px; color: var(--text); background: var(--border); transition: opacity 0.2s; }
+    .nav-link:hover { opacity: 0.8; }
+    .nav-link svg { width: 14px; height: 14px; }
     .theme-toggle { background: var(--border); border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; }
     .swagger-ui { max-width: 1400px; margin: 0 auto; padding: 20px; }
     .swagger-ui .topbar { display: none; }
@@ -42,6 +46,20 @@ const swaggerHtml = `<!DOCTYPE html>
   <div class="header">
     <h1>HaloLight API</h1>
     <div class="header-right">
+      <div class="nav-links">
+        <a class="nav-link" href="https://halolight-edge.h7ml.cn" target="_blank" title="生产环境">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Live
+        </a>
+        <a class="nav-link" href="https://dash.deno.com/playground/halolight-edge-api" target="_blank" title="Deno Playground">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm-.469 6.093c1.16 0 2.156.818 2.156 2.088 0 1.144-.752 1.836-1.734 2.412-.766.45-1.03.722-1.03 1.218v.324h-1.44v-.486c0-.864.534-1.368 1.44-1.89.73-.42 1.062-.738 1.062-1.398 0-.636-.498-1.092-1.272-1.092-.864 0-1.392.522-1.446 1.386H7.86c.06-1.578 1.17-2.562 2.67-2.562zm-.36 7.602c.588 0 1.026.438 1.026 1.014s-.438 1.014-1.026 1.014c-.576 0-1.026-.438-1.026-1.014s.45-1.014 1.026-1.014z"/></svg>
+          Deno
+        </a>
+        <a class="nav-link" href="https://github.com/dext7r/halolight-edge" target="_blank" title="GitHub 仓库">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub
+        </a>
+      </div>
       <span style="font-size:12px;color:#6b7280;">25+ APIs</span>
       <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
     </div>
@@ -88,8 +106,8 @@ async function validateApiToken(token: string): Promise<ApiTokenRecord | null> {
     .single()
   if (error || !data) return null
   if (data.expires_at && new Date(data.expires_at) < new Date()) return null
-  // Update last_used_at
-  await supabase.from('api_tokens').update({ last_used_at: new Date().toISOString() }).eq('id', data.id)
+  // Update last_used
+  await supabase.from('api_tokens').update({ last_used: new Date().toISOString() }).eq('id', data.id)
   return data
 }
 

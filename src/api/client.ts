@@ -133,10 +133,39 @@ export interface ApiToken {
   token: string
   permissions: string[]
   expires_at?: string
-  last_used_at?: string
+  last_used?: string
   status: 'active' | 'revoked' | 'expired'
+  created_by?: string
   created_at: string
   updated_at: string
+}
+
+export interface ScheduledTask {
+  id: string
+  name: string
+  description?: string
+  url: string
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  headers?: string
+  body?: string
+  cron_expression: string
+  enabled: boolean
+  last_run?: string
+  next_run?: string
+  status: 'success' | 'error' | 'pending'
+  created_by?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskExecutionHistory {
+  id: string
+  task_id: string
+  status: 'success' | 'error'
+  response_status?: number
+  response_body?: string
+  error_message?: string
+  executed_at: string
 }
 
 // ============ API Client ============
@@ -265,6 +294,30 @@ export const api = {
 
     revoke: (token: string, id: string) =>
       request<void>(`/rest/v1/api_tokens?id=eq.${id}`, { method: 'PATCH', token, body: { status: 'revoked' } }),
+  },
+
+  // 定时任务
+  scheduledTasks: {
+    list: (token: string) =>
+      request<ScheduledTask[]>('/rest/v1/scheduled_tasks?order=created_at.desc', { token }),
+
+    get: (token: string, id: string) =>
+      request<ScheduledTask>(`/rest/v1/scheduled_tasks?id=eq.${id}`, { token }),
+
+    create: (token: string, data: Omit<ScheduledTask, 'id' | 'created_at' | 'updated_at' | 'last_run' | 'next_run' | 'status'>) =>
+      request<ScheduledTask>('/rest/v1/scheduled_tasks', { method: 'POST', token, body: { ...data, status: 'pending' } }),
+
+    update: (token: string, id: string, data: Partial<Omit<ScheduledTask, 'id' | 'created_at' | 'updated_at'>>) =>
+      request<void>(`/rest/v1/scheduled_tasks?id=eq.${id}`, { method: 'PATCH', token, body: data }),
+
+    delete: (token: string, id: string) =>
+      request<void>(`/rest/v1/scheduled_tasks?id=eq.${id}`, { method: 'DELETE', token }),
+
+    toggle: (token: string, id: string, enabled: boolean) =>
+      request<void>(`/rest/v1/scheduled_tasks?id=eq.${id}`, { method: 'PATCH', token, body: { enabled } }),
+
+    getHistory: (token: string, taskId: string, limit = 20) =>
+      request<TaskExecutionHistory[]>(`/rest/v1/task_execution_history?task_id=eq.${taskId}&order=executed_at.desc&limit=${limit}`, { token }),
   },
 
   // Edge Functions

@@ -1,73 +1,115 @@
-# Welcome to your Lovable project
+# HaloLight Vue
 
-## Project info
+企业级 RBAC 权限管理系统 - React + Vite + Supabase 实现
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+[![Live](https://img.shields.io/badge/Live-halolight--edge.h7ml.cn-blue)](https://halolight-edge.h7ml.cn)
+[![Deno](https://img.shields.io/badge/Deno-Playground-black)](https://dash.deno.com/playground/halolight-edge-api)
+[![GitHub](https://img.shields.io/github/stars/dext7r/halolight-edge?style=social)](https://github.com/dext7r/halolight-edge)
 
-## How can I edit this code?
+## 技术栈
 
-There are several ways of editing your application.
+| 类别 | 技术 |
+|------|------|
+| 框架 | React 18 + TypeScript |
+| 构建 | Vite 5 + SWC |
+| 路由 | React Router DOM 6 |
+| 状态 | TanStack Query |
+| UI | Tailwind CSS + shadcn/ui + Radix UI |
+| 表单 | React Hook Form + Zod |
+| 图表 | Recharts |
+| 编辑器 | CodeMirror 6 |
+| 动画 | Framer Motion |
+| 后端 | Supabase (PostgreSQL + Auth + Edge Functions) |
+| API 文档 | Swagger UI |
 
-**Use Lovable**
+## 功能模块
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 核心功能
+- **用户认证** - 登录/注册/JWT Token
+- **用户管理** - CRUD、状态管理、批量操作
+- **角色权限** - RBAC 模型、权限分配
+- **审计日志** - 操作记录、行为追踪
 
-Changes made via Lovable will be committed automatically to this repo.
+### 开发工具
+- **API 文档** - Swagger UI 交互式文档
+- **API 测试器** - 在线接口调试
+- **SQL 编辑器** - 数据库查询工具
+- **数据字典** - 表结构与字段管理
 
-**Use your preferred IDE**
+### 系统管理
+- **定时任务** - Cron 任务调度
+- **API 令牌** - 访问令牌管理
+- **系统设置** - 主题、语言、偏好配置
+- **仪表盘** - 数据统计与可视化
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 基础设施
+- **全局错误边界** - 异常捕获与降级
+- **离线检测** - 网络状态监控
+- **深色模式** - 主题切换
+- **响应式布局** - 移动端适配
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 快速开始
 
-Follow these steps:
+```bash
+# 克隆项目
+git clone https://github.com/halolight/halolight-vue.git
+cd halolight-vue
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 安装依赖
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 配置环境变量
+cp .env.example .env
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 启动开发服务器
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 环境变量
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key
+VITE_SUPABASE_PROJECT_ID=your-project-id
+```
 
-**Use GitHub Codespaces**
+## 项目结构
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```
+src/
+├── api/            # API 客户端封装
+├── components/     # 通用组件
+│   └── ui/         # shadcn/ui 组件库
+├── contexts/       # React Context (Auth, Theme)
+├── hooks/          # 自定义 Hooks
+├── integrations/   # 第三方集成 (Supabase)
+├── lib/            # 工具函数
+├── pages/          # 页面组件
+├── types/          # TypeScript 类型定义
+├── utils/          # 业务工具函数
+├── App.tsx         # 应用入口 & 路由配置
+└── main.tsx        # 渲染入口
+```
 
-## What technologies are used for this project?
+## 脚本命令
 
-This project is built with:
+```bash
+npm run dev        # 启动开发服务器
+npm run build      # 生产构建
+npm run preview    # 预览构建产物
+npm run lint       # ESLint 检查
+npm run type-check # TypeScript 类型检查
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 相关链接
 
-## How can I deploy this project?
+| 链接 | 说明 |
+|------|------|
+| [halolight-edge.h7ml.cn](https://halolight-edge.h7ml.cn) | 生产环境 |
+| [Deno Playground](https://dash.deno.com/playground/halolight-edge-api) | API 在线调试 |
+| [GitHub](https://github.com/dext7r/halolight-edge) | 源码仓库 |
+| [API 文档](https://halolight-edge.h7ml.cn/api) | Swagger UI |
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## License
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+MIT

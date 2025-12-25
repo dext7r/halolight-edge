@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
 import {
   Plus,
   Search,
@@ -7,23 +7,22 @@ import {
   Clock,
   Play,
   Pause,
-  FileText,
   Upload,
-  Copy,
   CheckCircle,
   AlertCircle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+  RefreshCw,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -31,7 +30,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -39,110 +38,65 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { toast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
-import { parseRequest, formatHeaders, parseHeaders, type ParsedRequest } from '@/lib/request-parser';
+} from '@/components/ui/table'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { toast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/useAuth'
+import api, { type ScheduledTask } from '@/api/client'
+import { parseRequest, formatHeaders } from '@/lib/request-parser'
 
-interface ScheduledTask {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  method: string;
-  headers: string;
-  body: string | null;
-  cron_expression: string;
-  enabled: boolean;
-  last_run: string | null;
-  next_run: string | null;
-  status: 'success' | 'error' | 'pending';
-  created_at: string;
-}
+type TaskMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export default function ScheduledTasks() {
-  const [tasks, setTasks] = useState<ScheduledTask[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
-  const [importText, setImportText] = useState('');
+  const { session } = useAuth()
+  const [tasks, setTasks] = useState<ScheduledTask[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null)
+  const [importText, setImportText] = useState('')
 
   const [taskForm, setTaskForm] = useState({
     name: '',
     description: '',
     url: '',
-    method: 'GET',
+    method: 'GET' as TaskMethod,
     headers: '',
     body: '',
     cron_expression: '0 0 * * *',
     enabled: true,
-  });
+  })
 
-  // Mock data
+  const fetchTasks = async () => {
+    if (!session?.access_token) return
+    setLoading(true)
+    try {
+      const data = await api.scheduledTasks.list(session.access_token)
+      setTasks(data)
+    } catch (e) {
+      toast({ title: '获取任务列表失败', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    const mockTasks: ScheduledTask[] = [
-      {
-        id: '1',
-        name: '每日数据同步',
-        description: '同步用户数据到数据仓库',
-        url: 'https://api.example.com/sync/users',
-        method: 'POST',
-        headers: 'Authorization: Bearer token123\nContent-Type: application/json',
-        body: '{"type":"daily"}',
-        cron_expression: '0 2 * * *',
-        enabled: true,
-        last_run: '2024-01-15 02:00:00',
-        next_run: '2024-01-16 02:00:00',
-        status: 'success',
-        created_at: '2024-01-01',
-      },
-      {
-        id: '2',
-        name: '清理临时文件',
-        description: '每小时清理过期的临时文件',
-        url: 'https://api.example.com/cleanup/temp',
-        method: 'DELETE',
-        headers: 'Authorization: Bearer token123',
-        body: null,
-        cron_expression: '0 * * * *',
-        enabled: true,
-        last_run: '2024-01-15 10:00:00',
-        next_run: '2024-01-15 11:00:00',
-        status: 'success',
-        created_at: '2024-01-01',
-      },
-      {
-        id: '3',
-        name: '健康检查',
-        description: '检查服务健康状态',
-        url: 'https://api.example.com/health',
-        method: 'GET',
-        headers: '',
-        body: null,
-        cron_expression: '*/5 * * * *',
-        enabled: false,
-        last_run: '2024-01-15 09:55:00',
-        next_run: null,
-        status: 'error',
-        created_at: '2024-01-01',
-      },
-    ];
-    setTasks(mockTasks);
-  }, []);
+    fetchTasks()
+  }, [session?.access_token])
 
   const filteredTasks = tasks.filter(
     (task) =>
       task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      (task.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   const handleAdd = () => {
-    setEditingTask(null);
+    setEditingTask(null)
     setTaskForm({
       name: '',
       description: '',
@@ -152,136 +106,134 @@ export default function ScheduledTasks() {
       body: '',
       cron_expression: '0 0 * * *',
       enabled: true,
-    });
-    setIsDialogOpen(true);
-  };
+    })
+    setIsDialogOpen(true)
+  }
 
   const handleEdit = (task: ScheduledTask) => {
-    setEditingTask(task);
+    setEditingTask(task)
     setTaskForm({
       name: task.name,
-      description: task.description,
+      description: task.description || '',
       url: task.url,
       method: task.method,
-      headers: task.headers,
+      headers: task.headers || '',
       body: task.body || '',
       cron_expression: task.cron_expression,
       enabled: task.enabled,
-    });
-    setIsDialogOpen(true);
-  };
+    })
+    setIsDialogOpen(true)
+  }
 
-  const handleSave = () => {
-    if (!taskForm.name || !taskForm.url) {
-      toast({ title: '请填写任务名称和 URL', variant: 'destructive' });
-      return;
+  const handleSave = async () => {
+    if (!taskForm.name || !taskForm.url || !session?.access_token) {
+      toast({ title: '请填写任务名称和 URL', variant: 'destructive' })
+      return
     }
 
-    if (editingTask) {
-      setTasks(
-        tasks.map((t) =>
-          t.id === editingTask.id
-            ? {
-                ...t,
-                ...taskForm,
-              }
-            : t
-        )
-      );
-      toast({ title: '任务更新成功' });
-    } else {
-      const newTask: ScheduledTask = {
-        id: Date.now().toString(),
-        ...taskForm,
-        body: taskForm.body || null,
-        last_run: null,
-        next_run: '2024-01-16 00:00:00',
-        status: 'pending',
-        created_at: new Date().toISOString(),
-      };
-      setTasks([...tasks, newTask]);
-      toast({ title: '任务创建成功' });
+    setSaving(true)
+    try {
+      if (editingTask) {
+        await api.scheduledTasks.update(session.access_token, editingTask.id, {
+          name: taskForm.name,
+          description: taskForm.description || undefined,
+          url: taskForm.url,
+          method: taskForm.method,
+          headers: taskForm.headers || undefined,
+          body: taskForm.body || undefined,
+          cron_expression: taskForm.cron_expression,
+          enabled: taskForm.enabled,
+        })
+        toast({ title: '任务更新成功' })
+      } else {
+        await api.scheduledTasks.create(session.access_token, {
+          name: taskForm.name,
+          description: taskForm.description || undefined,
+          url: taskForm.url,
+          method: taskForm.method,
+          headers: taskForm.headers || undefined,
+          body: taskForm.body || undefined,
+          cron_expression: taskForm.cron_expression,
+          enabled: taskForm.enabled,
+        })
+        toast({ title: '任务创建成功' })
+      }
+      setIsDialogOpen(false)
+      fetchTasks()
+    } catch (e) {
+      toast({ title: '保存失败', description: (e as Error).message, variant: 'destructive' })
+    } finally {
+      setSaving(false)
     }
+  }
 
-    setIsDialogOpen(false);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('确定要删除此任务吗？')) {
-      setTasks(tasks.filter((t) => t.id !== id));
-      toast({ title: '任务删除成功' });
+  const handleDelete = async (id: string) => {
+    if (!confirm('确定要删除此任务吗？') || !session?.access_token) return
+    try {
+      await api.scheduledTasks.delete(session.access_token, id)
+      toast({ title: '任务删除成功' })
+      fetchTasks()
+    } catch (e) {
+      toast({ title: '删除失败', description: (e as Error).message, variant: 'destructive' })
     }
-  };
+  }
 
-  const handleToggleEnabled = (id: string) => {
-    setTasks(
-      tasks.map((t) =>
-        t.id === id
-          ? {
-              ...t,
-              enabled: !t.enabled,
-              next_run: !t.enabled ? '2024-01-16 00:00:00' : null,
-            }
-          : t
-      )
-    );
-    toast({ title: tasks.find((t) => t.id === id)?.enabled ? '任务已暂停' : '任务已启用' });
-  };
+  const handleToggleEnabled = async (task: ScheduledTask) => {
+    if (!session?.access_token) return
+    try {
+      await api.scheduledTasks.toggle(session.access_token, task.id, !task.enabled)
+      toast({ title: task.enabled ? '任务已暂停' : '任务已启用' })
+      fetchTasks()
+    } catch (e) {
+      toast({ title: '操作失败', description: (e as Error).message, variant: 'destructive' })
+    }
+  }
 
   const handleImport = () => {
-    setImportText('');
-    setIsImportDialogOpen(true);
-  };
+    setImportText('')
+    setIsImportDialogOpen(true)
+  }
 
   const handleParseImport = () => {
-    const parsed = parseRequest(importText);
+    const parsed = parseRequest(importText)
     if (!parsed) {
-      toast({ title: '解析失败', description: '请输入有效的 curl 或 fetch 代码', variant: 'destructive' });
-      return;
+      toast({ title: '解析失败', description: '请输入有效的 curl 或 fetch 代码', variant: 'destructive' })
+      return
     }
 
     setTaskForm({
       ...taskForm,
       url: parsed.url,
-      method: parsed.method,
+      method: parsed.method as TaskMethod,
       headers: formatHeaders(parsed.headers),
       body: parsed.body || '',
-    });
+    })
 
-    setIsImportDialogOpen(false);
-    setIsDialogOpen(true);
-    toast({ title: '导入成功', description: '请完善任务信息' });
-  };
+    setIsImportDialogOpen(false)
+    setIsDialogOpen(true)
+    toast({ title: '导入成功', description: '请完善任务信息' })
+  }
 
-  const handleRunNow = (id: string) => {
-    const task = tasks.find((t) => t.id === id);
-    if (task) {
-      toast({ title: '任务执行中...', description: `正在执行: ${task.name}` });
-      // 实际项目中这里应该调用 API
-    }
-  };
+  const handleRunNow = (task: ScheduledTask) => {
+    toast({ title: '任务执行中...', description: `正在执行: ${task.name}` })
+    // TODO: 实现手动触发执行 API
+  }
 
   const getStatusColor = (status: ScheduledTask['status']) => {
     switch (status) {
-      case 'success':
-        return 'text-success';
-      case 'error':
-        return 'text-destructive';
-      default:
-        return 'text-warning';
+      case 'success': return 'text-green-500'
+      case 'error': return 'text-destructive'
+      default: return 'text-yellow-500'
     }
-  };
+  }
 
   const getStatusIcon = (status: ScheduledTask['status']) => {
     switch (status) {
-      case 'success':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'error':
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
+      case 'success': return <CheckCircle className="h-4 w-4" />
+      case 'error': return <AlertCircle className="h-4 w-4" />
+      default: return <Clock className="h-4 w-4" />
     }
-  };
+  }
 
   const cronPresets = [
     { label: '每分钟', value: '* * * * *' },
@@ -290,12 +242,16 @@ export default function ScheduledTasks() {
     { label: '每天凌晨2点', value: '0 2 * * *' },
     { label: '每周一凌晨', value: '0 0 * * 1' },
     { label: '每月1号', value: '0 0 1 * *' },
-  ];
+  ]
+
+  const formatDateTime = (date?: string) => {
+    if (!date) return '-'
+    return new Date(date).toLocaleString('zh-CN')
+  }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -305,6 +261,10 @@ export default function ScheduledTasks() {
             <p className="text-muted-foreground mt-2">管理自动化定时任务和 API 调用</p>
           </div>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={fetchTasks} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              刷新
+            </Button>
             <Button variant="outline" onClick={handleImport} className="gap-2">
               <Upload className="h-4 w-4" />
               导入请求
@@ -316,7 +276,6 @@ export default function ScheduledTasks() {
           </div>
         </div>
 
-        {/* Search */}
         <Card>
           <CardContent className="pt-6">
             <div className="relative">
@@ -331,103 +290,91 @@ export default function ScheduledTasks() {
           </CardContent>
         </Card>
 
-        {/* Tasks Table */}
         <Card>
           <CardHeader>
             <CardTitle>任务列表</CardTitle>
             <CardDescription>共 {tasks.length} 个任务</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>状态</TableHead>
-                    <TableHead>任务名称</TableHead>
-                    <TableHead>请求</TableHead>
-                    <TableHead>Cron 表达式</TableHead>
-                    <TableHead>上次运行</TableHead>
-                    <TableHead>下次运行</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTasks.map((task) => (
-                    <TableRow key={task.id}>
-                      <TableCell>
-                        <div className={`flex items-center gap-2 ${getStatusColor(task.status)}`}>
-                          {getStatusIcon(task.status)}
-                          {task.enabled ? (
-                            <Badge variant="default">运行中</Badge>
-                          ) : (
-                            <Badge variant="secondary">已暂停</Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{task.name}</p>
-                          <p className="text-sm text-muted-foreground">{task.description}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <Badge variant="outline">{task.method}</Badge>
-                          <p className="text-sm text-muted-foreground truncate max-w-[200px]">
-                            {task.url}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-xs bg-muted px-2 py-1 rounded">{task.cron_expression}</code>
-                      </TableCell>
-                      <TableCell className="text-sm">{task.last_run || '-'}</TableCell>
-                      <TableCell className="text-sm">{task.next_run || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleRunNow(task.id)}
-                          >
-                            <Play className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleToggleEnabled(task.id)}
-                          >
-                            {task.enabled ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => handleEdit(task)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 hover:text-destructive"
-                            onClick={() => handleDelete(task.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">加载中...</div>
+            ) : filteredTasks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {tasks.length === 0 ? '暂无任务，点击"新建任务"开始' : '无匹配结果'}
+              </div>
+            ) : (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>状态</TableHead>
+                      <TableHead>任务名称</TableHead>
+                      <TableHead>请求</TableHead>
+                      <TableHead>Cron 表达式</TableHead>
+                      <TableHead>上次运行</TableHead>
+                      <TableHead>下次运行</TableHead>
+                      <TableHead className="text-right">操作</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTasks.map((task) => (
+                      <TableRow key={task.id}>
+                        <TableCell>
+                          <div className={`flex items-center gap-2 ${getStatusColor(task.status)}`}>
+                            {getStatusIcon(task.status)}
+                            {task.enabled ? (
+                              <Badge variant="default">运行中</Badge>
+                            ) : (
+                              <Badge variant="secondary">已暂停</Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{task.name}</p>
+                            {task.description && (
+                              <p className="text-sm text-muted-foreground">{task.description}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <Badge variant="outline">{task.method}</Badge>
+                            <p className="text-sm text-muted-foreground truncate max-w-[200px]">
+                              {task.url}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">{task.cron_expression}</code>
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDateTime(task.last_run)}</TableCell>
+                        <TableCell className="text-sm">{formatDateTime(task.next_run)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleRunNow(task)} title="立即执行">
+                              <Play className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleEnabled(task)} title={task.enabled ? '暂停' : '启用'}>
+                              {task.enabled ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(task)} title="编辑">
+                              <Edit className="h-3 w-3" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-destructive" onClick={() => handleDelete(task.id)} title="删除">
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Import Dialog */}
         <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
@@ -444,15 +391,12 @@ export default function ScheduledTasks() {
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>
-                取消
-              </Button>
+              <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>取消</Button>
               <Button onClick={handleParseImport}>解析并导入</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Task Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -467,7 +411,7 @@ export default function ScheduledTasks() {
 
               <TabsContent value="basic" className="space-y-4">
                 <div className="space-y-2">
-                  <Label>任务名称</Label>
+                  <Label>任务名称 *</Label>
                   <Input
                     placeholder="例如: 每日数据同步"
                     value={taskForm.name}
@@ -500,7 +444,7 @@ export default function ScheduledTasks() {
                 <div className="grid grid-cols-4 gap-4">
                   <div className="col-span-1 space-y-2">
                     <Label>方法</Label>
-                    <Select value={taskForm.method} onValueChange={(v) => setTaskForm({ ...taskForm, method: v })}>
+                    <Select value={taskForm.method} onValueChange={(v) => setTaskForm({ ...taskForm, method: v as TaskMethod })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -514,7 +458,7 @@ export default function ScheduledTasks() {
                     </Select>
                   </div>
                   <div className="col-span-3 space-y-2">
-                    <Label>URL</Label>
+                    <Label>URL *</Label>
                     <Input
                       placeholder="https://api.example.com/endpoint"
                       value={taskForm.url}
@@ -575,14 +519,12 @@ export default function ScheduledTasks() {
               </TabsContent>
             </Tabs>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                取消
-              </Button>
-              <Button onClick={handleSave}>{editingTask ? '更新' : '创建'}</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>取消</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? '保存中...' : editingTask ? '更新' : '创建'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
     </DashboardLayout>
-  );
+  )
 }

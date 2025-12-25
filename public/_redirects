@@ -1,0 +1,2 @@
+/api/* https://halolight-edge-api.deno.dev/:splat 200
+/* /index.html 200
