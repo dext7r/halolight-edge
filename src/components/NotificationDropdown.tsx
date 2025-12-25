@@ -56,7 +56,7 @@ export function NotificationDropdown() {
     title: '',
     message: '',
     type: 'info' as 'info' | 'success' | 'warning' | 'error',
-    target_role: '',
+    target_role: 'all',
   });
 
   const fetchNotifications = async () => {
@@ -186,7 +186,7 @@ export function NotificationDropdown() {
         title: newNotification.title,
         message: newNotification.message,
         type: newNotification.type,
-        target_role: newNotification.target_role || null,
+        target_role: newNotification.target_role === 'all' ? null : newNotification.target_role,
         created_by: user?.id,
       });
 
@@ -194,7 +194,7 @@ export function NotificationDropdown() {
 
       toast({ title: '通知已发送' });
       setIsAddDialogOpen(false);
-      setNewNotification({ title: '', message: '', type: 'info', target_role: '' });
+      setNewNotification({ title: '', message: '', type: 'info', target_role: 'all' });
       fetchNotifications();
     } catch (error) {
       console.error('Error adding notification:', error);
@@ -405,7 +405,7 @@ export function NotificationDropdown() {
                     <SelectValue placeholder="全部用户" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部用户</SelectItem>
+                    <SelectItem value="all">全部用户</SelectItem>
                     <SelectItem value="admin">管理员</SelectItem>
                     <SelectItem value="moderator">协管员</SelectItem>
                     <SelectItem value="user">普通用户</SelectItem>

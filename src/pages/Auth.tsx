@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 type AuthMode = 'login' | 'signup' | 'forgot' | 'reset-sent';
 
@@ -281,14 +282,17 @@ export default function Auth() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Back Button */}
-              <Link
-                to="/home"
-                className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                返回首页
-              </Link>
+              {/* Back Button and Theme Toggle */}
+              <div className="flex items-center justify-between mb-6">
+                <Link
+                  to="/home"
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  返回首页
+                </Link>
+                <ThemeToggle />
+              </div>
 
               <h2 className="text-2xl font-bold mb-2">{title}</h2>
               <p className="text-muted-foreground mb-8">{subtitle}</p>

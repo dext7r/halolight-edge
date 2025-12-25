@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LucideIcon, Home, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnimatedIllustration } from './AnimatedIllustration';
+import { ThemeToggle } from './ThemeToggle';
 
 interface StatusPageProps {
   code: string;
@@ -45,6 +46,11 @@ export default function StatusPage({
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Theme Toggle - Top Right */}
+      <div className="absolute top-6 right-6 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Background Effects */}
       <div className="absolute inset-0 bg-grid opacity-30" />
       <div className="absolute inset-0 bg-radial-mask" />

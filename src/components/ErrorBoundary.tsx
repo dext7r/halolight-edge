@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { logError } from '@/lib/error-logging';
 
 interface Props {
   children: ReactNode;
@@ -28,6 +29,12 @@ export class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({ errorInfo });
+
+    // 上报错误到后端
+    logError(error, errorInfo, {
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+    });
   }
 
   private handleReset = () => {

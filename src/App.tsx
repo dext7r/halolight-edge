@@ -7,6 +7,8 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeSettingsProvider } from "@/contexts/ThemeContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { OfflinePage } from "@/components/OfflinePage";
+import { useNetwork } from "@/hooks/use-network";
 import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
@@ -15,6 +17,11 @@ import Users from "./pages/Users";
 import Roles from "./pages/Roles";
 import Settings from "./pages/Settings";
 import AuditLogs from "./pages/AuditLogs";
+import DataDictionary from "./pages/DataDictionary";
+import ScheduledTasks from "./pages/ScheduledTasks";
+import ApiTokens from "./pages/ApiTokens";
+import SwaggerDocs from "./pages/SwaggerDocs";
+import SqlEditor from "./pages/SqlEditor";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import ServerError from "./pages/ServerError";
@@ -23,6 +30,41 @@ import Maintenance from "./pages/Maintenance";
 import NetworkError from "./pages/NetworkError";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { isOnline } = useNetwork();
+
+  // 如果离线，显示离线页面
+  if (!isOnline) {
+    return <OfflinePage />;
+  }
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/roles" element={<Roles />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/audit-logs" element={<AuditLogs />} />
+        <Route path="/data-dictionary" element={<DataDictionary />} />
+        <Route path="/scheduled-tasks" element={<ScheduledTasks />} />
+        <Route path="/api-tokens" element={<ApiTokens />} />
+        <Route path="/swagger-docs" element={<SwaggerDocs />} />
+        <Route path="/sql-editor" element={<SqlEditor />} />
+        <Route path="/403" element={<Forbidden />} />
+        <Route path="/401" element={<Unauthorized />} />
+        <Route path="/500" element={<ServerError />} />
+        <Route path="/503" element={<Maintenance />} />
+        <Route path="/offline" element={<NetworkError />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
+  );
+};
 
 const App = () => (
   <ErrorBoundary>
@@ -33,24 +75,7 @@ const App = () => (
             <AuthProvider>
               <Toaster />
               <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/home" element={<Home />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/roles" element={<Roles />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/audit-logs" element={<AuditLogs />} />
-                  <Route path="/403" element={<Forbidden />} />
-                  <Route path="/401" element={<Unauthorized />} />
-                  <Route path="/500" element={<ServerError />} />
-                  <Route path="/503" element={<Maintenance />} />
-                  <Route path="/offline" element={<NetworkError />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
+              <AppContent />
             </AuthProvider>
           </TooltipProvider>
         </ThemeSettingsProvider>

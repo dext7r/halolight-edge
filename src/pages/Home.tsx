@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  Zap, Shield, Users, Lock, BarChart3, Settings, 
-  ArrowRight, CheckCircle, Globe, Sparkles 
+import {
+  Zap, Shield, Users, Lock, BarChart3, Settings,
+  ArrowRight, CheckCircle, Globe, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const features = [
   {
@@ -60,6 +61,7 @@ export default function Home() {
           </Link>
           
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Link to="/auth?mode=login">
               <Button variant="ghost" className="hidden sm:inline-flex">
                 登录

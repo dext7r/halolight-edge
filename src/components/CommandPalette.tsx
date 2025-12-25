@@ -20,6 +20,11 @@ import {
   Moon,
   Sun,
   Search,
+  Database,
+  Clock,
+  Key,
+  Book,
+  Code,
 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useTheme } from 'next-themes';
@@ -44,6 +49,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     { icon: Users, label: '用户管理', path: '/users', show: isModerator },
     { icon: Shield, label: '角色权限', path: '/roles', show: isAdmin },
     { icon: FileText, label: '审计日志', path: '/audit-logs', show: isAdmin },
+    { icon: Database, label: '数据字典', path: '/data-dictionary', show: true },
+    { icon: Clock, label: '定时任务', path: '/scheduled-tasks', show: isAdmin },
+    { icon: Key, label: 'API 令牌', path: '/api-tokens', show: isAdmin },
+    { icon: Book, label: 'API 文档', path: '/swagger-docs', show: true },
+    { icon: Code, label: 'SQL 编辑器', path: '/sql-editor', show: isAdmin },
     { icon: Settings, label: '系统设置', path: '/settings', show: true },
   ].filter(item => item.show);
 

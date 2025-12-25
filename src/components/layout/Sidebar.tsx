@@ -12,6 +12,11 @@ import {
   LogOut,
   FileText,
   ExternalLink,
+  Database,
+  Clock,
+  Key,
+  Book,
+  Code,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -29,6 +34,11 @@ const menuItems = [
   { icon: Users, label: "用户管理", path: "/users", permission: "users:read" },
   { icon: Shield, label: "角色权限", path: "/roles", permission: "roles:read" },
   { icon: FileText, label: "审计日志", path: "/audit-logs", permission: "roles:read" },
+  { icon: Database, label: "数据字典", path: "/data-dictionary", permission: "dashboard:read" },
+  { icon: Clock, label: "定时任务", path: "/scheduled-tasks", permission: "roles:read" },
+  { icon: Key, label: "API 令牌", path: "/api-tokens", permission: "roles:read" },
+  { icon: Book, label: "API 文档", path: "/swagger-docs", permission: "dashboard:read" },
+  { icon: Code, label: "SQL 编辑器", path: "/sql-editor", permission: "roles:read" },
   { icon: Settings, label: "系统设置", path: "/settings", permission: "settings:read" },
 ];
 
