@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Home, Bug } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, Bug, ArrowLeft, Copy, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { logError } from '@/lib/error-logging';
@@ -13,6 +13,7 @@ interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  copied: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -20,6 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
     hasError: false,
     error: null,
     errorInfo: null,
+    copied: false,
   };
 
   public static getDerivedStateFromError(error: Error): Partial<State> {
@@ -47,6 +49,24 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleGoHome = () => {
     window.location.href = '/';
+  };
+
+  private handleGoBack = () => {
+    window.history.back();
+  };
+
+  private handleCopyError = async () => {
+    const { error, errorInfo } = this.state;
+    const errorText = [
+      error?.toString(),
+      errorInfo?.componentStack ? `\nComponent Stack:${errorInfo.componentStack}` : '',
+      `\nURL: ${window.location.href}`,
+      `\nTime: ${new Date().toISOString()}`,
+    ].join('');
+
+    await navigator.clipboard.writeText(errorText);
+    this.setState({ copied: true });
+    setTimeout(() => this.setState({ copied: false }), 2000);
   };
 
   public render() {
@@ -140,15 +160,23 @@ export class ErrorBoundary extends Component<Props, State> {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex flex-col sm:flex-row items-center justify-center gap-4"
+                className="flex flex-wrap items-center justify-center gap-3"
               >
                 <Button
                   variant="outline"
-                  onClick={this.handleReset}
+                  onClick={this.handleGoBack}
                   className="gap-2"
                 >
-                  <RefreshCw className="h-4 w-4" />
-                  重试
+                  <ArrowLeft className="h-4 w-4" />
+                  返回上一页
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={this.handleCopyError}
+                  className="gap-2"
+                >
+                  {this.state.copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {this.state.copied ? '已复制' : '复制错误'}
                 </Button>
                 <Button
                   onClick={this.handleReload}

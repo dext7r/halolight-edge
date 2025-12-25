@@ -22,6 +22,7 @@ import ScheduledTasks from "./pages/ScheduledTasks";
 import ApiTokens from "./pages/ApiTokens";
 import SwaggerDocs from "./pages/SwaggerDocs";
 import SqlEditor from "./pages/SqlEditor";
+import ApiTester from "./pages/ApiTester";
 import NotFound from "./pages/NotFound";
 import Forbidden from "./pages/Forbidden";
 import ServerError from "./pages/ServerError";
@@ -55,6 +56,7 @@ const AppContent = () => {
         <Route path="/api-tokens" element={<ApiTokens />} />
         <Route path="/swagger-docs" element={<SwaggerDocs />} />
         <Route path="/sql-editor" element={<SqlEditor />} />
+        <Route path="/api-tester" element={<ApiTester />} />
         <Route path="/403" element={<Forbidden />} />
         <Route path="/401" element={<Unauthorized />} />
         <Route path="/500" element={<ServerError />} />

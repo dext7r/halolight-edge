@@ -1,0 +1,791 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "HaloLight RBAC API",
+    "description": "HaloLight 权限管理系统 API 文档，基于 Supabase 构建",
+    "version": "1.0.0",
+    "contact": {
+      "name": "HaloLight Team",
+      "url": "https://rbac.h7ml.cn"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://rbac.h7ml.cn",
+      "description": "生产环境"
+    },
+    {
+      "url": "http://localhost:8888",
+      "description": "本地开发"
+    }
+  ],
+  "tags": [
+    { "name": "认证", "description": "用户认证相关接口" },
+    { "name": "用户", "description": "用户管理" },
+    { "name": "角色", "description": "角色与权限管理" },
+    { "name": "审计", "description": "审计日志" },
+    { "name": "通知", "description": "系统通知" },
+    { "name": "统计", "description": "数据统计视图" },
+    { "name": "函数", "description": "RPC 函数" }
+  ],
+  "paths": {
+    "/auth/v1/signup": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "用户注册",
+        "operationId": "signup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string", "minLength": 6 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "注册成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "description": "请求参数错误" },
+          "422": { "description": "邮箱已被注册" }
+        }
+      }
+    },
+    "/auth/v1/token": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "用户登录",
+        "operationId": "login",
+        "parameters": [
+          { "name": "grant_type", "in": "query", "required": true, "schema": { "type": "string", "enum": ["password", "refresh_token"] } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "登录成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "description": "凭证错误" }
+        }
+      }
+    },
+    "/auth/v1/logout": {
+      "post": {
+        "tags": ["认证"],
+        "summary": "用户登出",
+        "operationId": "logout",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "登出成功" }
+        }
+      }
+    },
+    "/rest/v1/profiles": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "获取用户列表",
+        "operationId": "getProfiles",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "select", "in": "query", "schema": { "type": "string" }, "description": "选择返回字段" },
+          { "name": "order", "in": "query", "schema": { "type": "string" }, "description": "排序字段" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" }, "description": "返回数量限制" },
+          { "name": "offset", "in": "query", "schema": { "type": "integer" }, "description": "偏移量" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Profile" } } } }
+          },
+          "401": { "description": "未授权" }
+        }
+      },
+      "post": {
+        "tags": ["用户"],
+        "summary": "创建用户资料",
+        "operationId": "createProfile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileInsert" } } }
+        },
+        "responses": {
+          "201": { "description": "创建成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } },
+          "400": { "description": "请求参数错误" }
+        }
+      }
+    },
+    "/rest/v1/profiles?user_id=eq.{user_id}": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "获取单个用户资料",
+        "operationId": "getProfileById",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "200": { "description": "成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Profile" } } } },
+          "404": { "description": "用户不存在" }
+        }
+      },
+      "patch": {
+        "tags": ["用户"],
+        "summary": "更新用户资料",
+        "operationId": "updateProfile",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProfileUpdate" } } }
+        },
+        "responses": {
+          "200": { "description": "更新成功" },
+          "404": { "description": "用户不存在" }
+        }
+      },
+      "delete": {
+        "tags": ["用户"],
+        "summary": "删除用户资料",
+        "operationId": "deleteProfile",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "删除成功" },
+          "404": { "description": "用户不存在" }
+        }
+      }
+    },
+    "/rest/v1/user_roles": {
+      "get": {
+        "tags": ["角色"],
+        "summary": "获取用户角色列表",
+        "operationId": "getUserRoles",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "query", "schema": { "type": "string" }, "description": "按用户ID筛选" },
+          { "name": "role", "in": "query", "schema": { "type": "string" }, "description": "按角色筛选" }
+        ],
+        "responses": {
+          "200": { "description": "成功", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/UserRole" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["角色"],
+        "summary": "分配用户角色",
+        "operationId": "assignUserRole",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserRoleInsert" } } }
+        },
+        "responses": {
+          "201": { "description": "分配成功" },
+          "409": { "description": "角色已存在" }
+        }
+      }
+    },
+    "/rest/v1/user_roles?user_id=eq.{user_id}": {
+      "patch": {
+        "tags": ["角色"],
+        "summary": "更新用户角色",
+        "operationId": "updateUserRole",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserRoleUpdate" } } }
+        },
+        "responses": {
+          "200": { "description": "更新成功" }
+        }
+      },
+      "delete": {
+        "tags": ["角色"],
+        "summary": "移除用户角色",
+        "operationId": "removeUserRole",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "user_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "移除成功" }
+        }
+      }
+    },
+    "/rest/v1/permissions": {
+      "get": {
+        "tags": ["角色"],
+        "summary": "获取权限列表",
+        "operationId": "getPermissions",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "module", "in": "query", "schema": { "type": "string" }, "description": "按模块筛选" }
+        ],
+        "responses": {
+          "200": { "description": "成功", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Permission" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["角色"],
+        "summary": "创建权限",
+        "operationId": "createPermission",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PermissionInsert" } } }
+        },
+        "responses": {
+          "201": { "description": "创建成功" }
+        }
+      }
+    },
+    "/rest/v1/role_permissions": {
+      "get": {
+        "tags": ["角色"],
+        "summary": "获取角色权限关联",
+        "operationId": "getRolePermissions",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "role", "in": "query", "schema": { "type": "string" }, "description": "按角色筛选" }
+        ],
+        "responses": {
+          "200": { "description": "成功", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/RolePermission" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["角色"],
+        "summary": "添加角色权限",
+        "operationId": "addRolePermission",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RolePermissionInsert" } } }
+        },
+        "responses": {
+          "201": { "description": "添加成功" },
+          "409": { "description": "权限已存在" }
+        }
+      }
+    },
+    "/rest/v1/role_permissions?role=eq.{role}&permission_id=eq.{permission_id}": {
+      "delete": {
+        "tags": ["角色"],
+        "summary": "移除角色权限",
+        "operationId": "removeRolePermission",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "role", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/AppRole" } },
+          { "name": "permission_id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "移除成功" }
+        }
+      }
+    },
+    "/rest/v1/audit_logs": {
+      "get": {
+        "tags": ["审计"],
+        "summary": "获取审计日志",
+        "operationId": "getAuditLogs",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "action", "in": "query", "schema": { "type": "string" }, "description": "按操作类型筛选" },
+          { "name": "user_id", "in": "query", "schema": { "type": "string" }, "description": "按用户ID筛选" },
+          { "name": "order", "in": "query", "schema": { "type": "string", "default": "created_at.desc" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "成功", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AuditLog" } } } } }
+        }
+      }
+    },
+    "/rest/v1/notifications": {
+      "get": {
+        "tags": ["通知"],
+        "summary": "获取通知列表",
+        "operationId": "getNotifications",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string" }, "description": "按类型筛选" },
+          { "name": "target_role", "in": "query", "schema": { "type": "string" }, "description": "按目标角色筛选" }
+        ],
+        "responses": {
+          "200": { "description": "成功", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["通知"],
+        "summary": "创建通知",
+        "operationId": "createNotification",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationInsert" } } }
+        },
+        "responses": {
+          "201": { "description": "创建成功" }
+        }
+      }
+    },
+    "/rest/v1/user_notification_reads": {
+      "post": {
+        "tags": ["通知"],
+        "summary": "标记通知已读",
+        "operationId": "markNotificationRead",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["notification_id", "user_id"],
+                "properties": {
+                  "notification_id": { "type": "string", "format": "uuid" },
+                  "user_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "标记成功" }
+        }
+      }
+    },
+    "/rest/v1/daily_activity": {
+      "get": {
+        "tags": ["统计"],
+        "summary": "获取每日活动统计",
+        "operationId": "getDailyActivity",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "day": { "type": "string", "format": "date" },
+                      "action": { "$ref": "#/components/schemas/AuditAction" },
+                      "count": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/v1/role_statistics": {
+      "get": {
+        "tags": ["统计"],
+        "summary": "获取角色统计",
+        "operationId": "getRoleStatistics",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "role": { "$ref": "#/components/schemas/AppRole" },
+                      "user_count": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/v1/user_statistics": {
+      "get": {
+        "tags": ["统计"],
+        "summary": "获取用户统计",
+        "operationId": "getUserStatistics",
+        "security": [{ "bearerAuth": [] }, { "apiKey": [] }],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "month": { "type": "string" },
+                      "new_users": { "type": "integer" },
+                      "total_users": { "type": "integer" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rest/v1/rpc/get_user_role": {
+      "post": {
+        "tags": ["函数"],
+        "summary": "获取用户角色",
+        "operationId": "rpcGetUserRole",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["_user_id"],
+                "properties": {
+                  "_user_id": { "type": "string", "format": "uuid", "description": "用户ID" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppRole" } } }
+          }
+        }
+      }
+    },
+    "/rest/v1/rpc/has_role": {
+      "post": {
+        "tags": ["函数"],
+        "summary": "检查用户是否拥有指定角色",
+        "operationId": "rpcHasRole",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["_user_id", "_role"],
+                "properties": {
+                  "_user_id": { "type": "string", "format": "uuid" },
+                  "_role": { "$ref": "#/components/schemas/AppRole" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "type": "boolean" } } }
+          }
+        }
+      }
+    },
+    "/rest/v1/rpc/log_audit_event": {
+      "post": {
+        "tags": ["函数"],
+        "summary": "记录审计事件",
+        "operationId": "rpcLogAuditEvent",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["p_action"],
+                "properties": {
+                  "p_action": { "$ref": "#/components/schemas/AuditAction" },
+                  "p_details": { "type": "object" },
+                  "p_target_user_id": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": { "application/json": { "schema": { "type": "string", "format": "uuid", "description": "审计日志ID" } } }
+          }
+        }
+      }
+    },
+    "/functions/v1/create-user": {
+      "post": {
+        "tags": ["用户"],
+        "summary": "创建新用户 (Edge Function)",
+        "description": "通过 Edge Function 创建新用户，需要管理员权限",
+        "operationId": "createUser",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "description": "用户邮箱" },
+                  "password": { "type": "string", "minLength": 6, "description": "用户密码" },
+                  "full_name": { "type": "string", "description": "用户全名" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": { "type": "object" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "请求参数错误" },
+          "401": { "description": "未授权" },
+          "403": { "description": "权限不足" }
+        }
+      }
+    },
+    "/functions/v1/get-env": {
+      "get": {
+        "tags": ["函数"],
+        "summary": "获取环境变量",
+        "description": "获取 Edge Function 运行环境的所有环境变量",
+        "operationId": "getEnv",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase JWT Token"
+      },
+      "apiKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "apikey",
+        "description": "Supabase Anon/Service Key"
+      }
+    },
+    "schemas": {
+      "AppRole": {
+        "type": "string",
+        "enum": ["admin", "moderator", "user"],
+        "description": "应用角色"
+      },
+      "AuditAction": {
+        "type": "string",
+        "enum": ["user_login", "user_logout", "user_signup", "role_change", "permission_change", "profile_update", "password_reset", "user_delete"],
+        "description": "审计操作类型"
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "full_name": { "type": "string" },
+          "avatar_url": { "type": "string", "format": "uri" },
+          "status": { "type": "string", "enum": ["active", "inactive", "suspended"] },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProfileInsert": {
+        "type": "object",
+        "required": ["user_id"],
+        "properties": {
+          "user_id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "full_name": { "type": "string" },
+          "avatar_url": { "type": "string", "format": "uri" },
+          "status": { "type": "string", "default": "active" }
+        }
+      },
+      "ProfileUpdate": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "full_name": { "type": "string" },
+          "avatar_url": { "type": "string", "format": "uri" },
+          "status": { "type": "string" }
+        }
+      },
+      "UserRole": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "role": { "$ref": "#/components/schemas/AppRole" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserRoleInsert": {
+        "type": "object",
+        "required": ["user_id"],
+        "properties": {
+          "user_id": { "type": "string", "format": "uuid" },
+          "role": { "$ref": "#/components/schemas/AppRole", "default": "user" }
+        }
+      },
+      "UserRoleUpdate": {
+        "type": "object",
+        "properties": {
+          "role": { "$ref": "#/components/schemas/AppRole" }
+        }
+      },
+      "Permission": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "module": { "type": "string" },
+          "description": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PermissionInsert": {
+        "type": "object",
+        "required": ["name", "module"],
+        "properties": {
+          "name": { "type": "string" },
+          "module": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "RolePermission": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "role": { "$ref": "#/components/schemas/AppRole" },
+          "permission_id": { "type": "string", "format": "uuid" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RolePermissionInsert": {
+        "type": "object",
+        "required": ["role", "permission_id"],
+        "properties": {
+          "role": { "$ref": "#/components/schemas/AppRole" },
+          "permission_id": { "type": "string", "format": "uuid" }
+        }
+      },
+      "AuditLog": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "action": { "$ref": "#/components/schemas/AuditAction" },
+          "target_user_id": { "type": "string", "format": "uuid" },
+          "details": { "type": "object" },
+          "ip_address": { "type": "string" },
+          "user_agent": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { "type": "string" },
+          "target_user_id": { "type": "string", "format": "uuid" },
+          "target_role": { "type": "string" },
+          "created_by": { "type": "string", "format": "uuid" },
+          "expires_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NotificationInsert": {
+        "type": "object",
+        "required": ["title", "message"],
+        "properties": {
+          "title": { "type": "string" },
+          "message": { "type": "string" },
+          "type": { "type": "string", "default": "info" },
+          "target_user_id": { "type": "string", "format": "uuid" },
+          "target_role": { "type": "string" },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" },
+          "token_type": { "type": "string" },
+          "expires_in": { "type": "integer" },
+          "refresh_token": { "type": "string" },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "email": { "type": "string", "format": "email" },
+              "created_at": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
