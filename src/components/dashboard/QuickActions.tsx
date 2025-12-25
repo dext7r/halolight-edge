@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
-import { Plus, Shield, FileText, Scan, Users, Settings } from 'lucide-react';
+import { Plus, Shield, FileText, Users, Settings, LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 
 interface QuickAction {
   label: string;
-  icon: typeof Plus;
+  icon: LucideIcon;
   path: string;
   variant: 'primary' | 'secondary';
 }
