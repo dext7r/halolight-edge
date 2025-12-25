@@ -17,7 +17,7 @@ const roleConfig: Record<string, { name: string; color: string }> = {
   user: { name: '普通用户', color: 'hsl(var(--muted-foreground))' },
 };
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: any[] }) => {
   if (active && payload && payload.length) {
     const item = payload[0];
     const total = item.payload.total || 1;

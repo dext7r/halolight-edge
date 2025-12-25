@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LucideIcon, Home, ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AnimatedIllustration } from './AnimatedIllustration';
 
 interface StatusPageProps {
   code: string;
@@ -9,6 +10,7 @@ interface StatusPageProps {
   description: string;
   icon: LucideIcon;
   iconColor?: string;
+  illustrationType?: '404' | '403' | '401' | '500' | '503' | 'offline' | 'error';
   showHomeButton?: boolean;
   showBackButton?: boolean;
   showRefreshButton?: boolean;
@@ -21,11 +23,26 @@ export default function StatusPage({
   description,
   icon: Icon,
   iconColor = 'text-primary',
+  illustrationType,
   showHomeButton = true,
   showBackButton = true,
   showRefreshButton = false,
   children,
 }: StatusPageProps) {
+  // Auto-detect illustration type from code if not provided
+  const getIllustrationType = (): '404' | '403' | '401' | '500' | '503' | 'offline' | 'error' => {
+    if (illustrationType) return illustrationType;
+    switch (code) {
+      case '404': return '404';
+      case '403': return '403';
+      case '401': return '401';
+      case '500': return '500';
+      case '503': return '503';
+      case '离线': return 'offline';
+      default: return 'error';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background Effects */}
@@ -49,17 +66,12 @@ export default function StatusPage({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Icon */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-            className="mx-auto mb-8"
-          >
-            <div className={`w-24 h-24 rounded-3xl bg-card border border-border/50 shadow-lg flex items-center justify-center mx-auto ${iconColor}`}>
-              <Icon className="h-12 w-12" />
-            </div>
-          </motion.div>
+          {/* Animated Illustration */}
+          <AnimatedIllustration 
+            type={getIllustrationType()} 
+            icon={Icon} 
+            iconColor={iconColor} 
+          />
 
           {/* Code */}
           <motion.div
@@ -68,7 +80,7 @@ export default function StatusPage({
             transition={{ delay: 0.2 }}
             className="mb-4"
           >
-            <span className="text-8xl sm:text-9xl font-bold text-gradient">{code}</span>
+            <span className="text-7xl sm:text-8xl font-bold text-gradient">{code}</span>
           </motion.div>
 
           {/* Title */}
